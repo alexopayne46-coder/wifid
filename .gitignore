@@ -1,0 +1,9 @@
+node_modules/
+dist/
+bun.lock
+cracked.json
+dns.yml
+hs/
+nmap/
+services/
+.kilo/
