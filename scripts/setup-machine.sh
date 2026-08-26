@@ -3,10 +3,42 @@
 # Installs required packages and loads kernel modules.
 set -euo pipefail
 
-echo "=== wifid AP Portal — machine setup ==="
+# Colors matching the pino logger format (config.ts)
+TIME_COLOR=$'\x1b[90m'
+INFO_COLOR=$'\x1b[32m'
+WARN_COLOR=$'\x1b[33m'
+ERROR_COLOR=$'\x1b[31m'
+SERVICE_COLOR=$'\x1b[36m'
+RESET=$'\x1b[0m'
+
+log_info() {
+  local svc="$1"; shift
+  local msg="$*"
+  local ts
+  ts=$(date +"%H:%M:%S.%6N")
+  printf "${TIME_COLOR}${ts}${RESET} ${INFO_COLOR}<Information>${RESET} ${SERVICE_COLOR}${svc}${RESET}: ${msg}\n"
+}
+
+log_warn() {
+  local svc="$1"; shift
+  local msg="$*"
+  local ts
+  ts=$(date +"%H:%M:%S.%6N")
+  printf "${TIME_COLOR}${ts}${RESET} ${WARN_COLOR}<Warn>${RESET} ${SERVICE_COLOR}${svc}${RESET}: ${msg}\n"
+}
+
+log_error() {
+  local svc="$1"; shift
+  local msg="$*"
+  local ts
+  ts=$(date +"%H:%M:%S.%6N")
+  printf "${TIME_COLOR}${ts}${RESET} ${ERROR_COLOR}<Error>${RESET} ${SERVICE_COLOR}${svc}${RESET}: ${msg}\n"
+}
+
+log_info "setup" "wifid AP Portal — machine setup"
 
 # --- Packages ---
-echo "[1/3] installing packages..."
+log_info "setup" "[1/3] installing packages..."
 if command -v pacman &>/dev/null; then
   sudo pacman -S --noconfirm ipset hostapd dnsmasq iptables iw rfkill
 elif command -v apt &>/dev/null; then
@@ -15,20 +47,19 @@ elif command -v apt &>/dev/null; then
 elif command -v dnf &>/dev/null; then
   sudo dnf install -y ipset hostapd dnsmasq iptables-services iw rfkill
 fi
-echo "  packages installed."
+log_info "setup" "packages installed"
 
 # --- Kernel modules ---
-echo "[2/3] loading kernel modules..."
+log_info "setup" "[2/3] loading kernel modules..."
 sudo modprobe ip_set 2>/dev/null || true
 sudo modprobe ip_set_hash_ip 2>/dev/null || true
 sudo modprobe nf_conntrack 2>/dev/null || true
-echo "  kernel modules loaded."
+log_info "setup" "kernel modules loaded"
 
 # --- Sysctl ---
-echo "[3/3] enabling forwarding..."
+log_info "setup" "[3/3] enabling forwarding..."
 sudo sysctl -w net.ipv4.ip_forward=1 >/dev/null
-echo "  forwarding enabled."
+log_info "setup" "forwarding enabled"
 
-echo ""
-echo "=== Setup complete! ==="
-echo "Now you can run: sudo bun run src/ap.ts"
+log_info "setup" "setup complete!"
+log_info "setup" "now run: sudo bun run src/ap.ts"
