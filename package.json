@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "bun run src/ap.ts"
+    "start": "bun run src/ap.ts",
+    "test": "bun test"
   },
   "dependencies": {
     "pino": "^10.3.1",

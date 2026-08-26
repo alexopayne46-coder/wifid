@@ -3,8 +3,8 @@ import { CONFIG, AP_MODE, netPassthough, hl, svc } from "./config.ts";
 import { runQuiet } from "./utils.ts";
 
 /**
- * Detect the AP interface: pick the first wlp0s20f0uN that
- * actually exists on the system right now.
+ * Detect the AP interface: pick the first wlp0s20f0uN or wlp0s20u2uN that
+ * actually exists on the system right now, trying prefixes in order.
  */
 export function detectApIface() {
   let entries = [];

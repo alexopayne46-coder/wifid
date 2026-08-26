@@ -1,0 +1,32 @@
+#!/bin/bash
+# Pre-push hook: sync template configs from /etc into the repo's templates/ dir
+# so new users get them automatically when they clone.
+set -uo pipefail
+
+cd "$(git rev-parse --show-toplevel)"
+
+HOSTAPD_SRC="/etc/hostapd/hostapd.conf"
+DNSMASQ_SRC="/etc/dnsmasq-ap.conf"
+CHANGES=0
+
+if [ -r "$HOSTAPD_SRC" ]; then
+  cp "$HOSTAPD_SRC" "templates/hostapd.conf"
+  echo "[pre-push] synced $HOSTAPD_SRC -> templates/hostapd.conf"
+  CHANGES=1
+else
+  echo "[pre-push] skipping hostapd template (not readable — run with sudo to sync)"
+fi
+
+if [ -r "$DNSMASQ_SRC" ]; then
+  cp "$DNSMASQ_SRC" "templates/dnsmasq-ap.conf"
+  echo "[pre-push] synced $DNSMASQ_SRC -> templates/dnsmasq-ap.conf"
+  CHANGES=1
+else
+  echo "[pre-push] skipping dnsmasq template (not readable — run with sudo to sync)"
+fi
+
+if [ "$CHANGES" -eq 1 ]; then
+  git add templates/hostapd.conf templates/dnsmasq-ap.conf
+  git commit --amend --no-edit -- templates/hostapd.conf templates/dnsmasq-ap.conf 2>/dev/null || git commit -m "chore: sync AP/dnsmasq templates" -- templates/hostapd.conf templates/dnsmasq-ap.conf
+  echo "[pre-push] templates committed"
+fi
