@@ -1,5 +1,6 @@
 import { createServer } from "node:http";
 import { readFileSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
 import path from "node:path";
 
 const PORTAL_REDIRECT = `<html><body><h1>Hello World!</h1></body></html>`;
@@ -20,6 +21,32 @@ export function startRequestLogger(bindIp, ports, logger) {
 
   const servers = ports.map((port) => {
     const server = createServer(handler);
+    server.on("error", (err: any) => {
+      if (err.code === "EADDRINUSE") {
+        const ss = spawnSync("ss", ["-tlnp", `sport = :${port}`], {
+          encoding: "utf8",
+        });
+        logger.error(
+          `port ${port} (${bindIp}) is already in use. Occupying process:`,
+        );
+        const lines = (ss.stdout || "").trim().split("\n").filter(Boolean);
+        if (lines.length >= 2) {
+          for (const line of lines.slice(1)) {
+            logger.error(`  ${line.trim()}`);
+          }
+        } else {
+          logger.error(
+            `  (could not identify process — try: sudo ss -tlnp 'sport = :${port}')`,
+          );
+        }
+        logger.error(`to free the port: sudo kill $(lsof -ti :${port}) 2>/dev/null || sudo fuser -k ${port}/tcp`);
+        server.close();
+        process.exit(1);
+      } else {
+        logger.error(`server error: ${err.message}`);
+        process.exit(1);
+      }
+    });
     server.listen(port, bindIp, () => {
       logger.info(`request logger listening on http://${bindIp}:${port}`);
     });
@@ -97,6 +124,32 @@ export function startPortalServer(bindIp, port, distDir, logger) {
   };
 
   const server = createServer(handler);
+  server.on("error", (err: any) => {
+    if (err.code === "EADDRINUSE") {
+      const ss = spawnSync("ss", ["-tlnp", `sport = :${port}`], {
+        encoding: "utf8",
+      });
+      logger.error(
+        `portal port ${port} (${bindIp}) is already in use. Occupying process:`,
+      );
+      const lines = (ss.stdout || "").trim().split("\n").filter(Boolean);
+      if (lines.length >= 2) {
+        for (const line of lines.slice(1)) {
+          logger.error(`  ${line.trim()}`);
+        }
+      } else {
+        logger.error(
+          `  (could not identify process — try: sudo ss -tlnp 'sport = :${port}')`,
+        );
+      }
+      logger.error(`to free the port: sudo kill $(lsof -ti :${port}) 2>/dev/null || sudo fuser -k ${port}/tcp`);
+      server.close();
+      process.exit(1);
+    } else {
+      logger.error(`server error: ${err.message}`);
+      process.exit(1);
+    }
+  });
   server.listen(port, bindIp, () => {
     logger.info(`portal server listening on http://${bindIp}:${port} (dist: ${distDir})`);
   });
