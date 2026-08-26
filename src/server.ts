@@ -1,5 +1,5 @@
 import { createServer } from "node:http";
-import { readFileSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { readFileSync, existsSync, mkdirSync, writeFileSync, appendFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import path from "node:path";
 
@@ -86,16 +86,7 @@ export function startPortalServer(bindIp, port, distDir, logger) {
     ".ico": "image/x-icon",
   };
 
-  const handler = (req, res) => {
-    const remote = req.socket.remoteAddress || "unknown";
-    logger.info(`portal request: ${req.method} ${req.url} from ${remote}`);
-    const method = req.method || "GET";
-    const url = req.url || "/";
-
-    if (method === "POST" && (url === "/" || url === "/form")) {
-      logger.info(`portal POST: ${url} from ${remote}`);
-    }
-
+  function sendPortalResponse(req, res, method, url, bindIp, port, distDir, logger) {
     const pathname = url.split("?")[0];
 
     if (CAPTIVE_PORTAL_PATHS.has(pathname)) {
@@ -121,6 +112,38 @@ export function startPortalServer(bindIp, port, distDir, logger) {
       res.writeHead(404, { "Content-Type": "text/plain" });
       res.end("Not Found");
     }
+  }
+
+  const handler = (req, res) => {
+    const remote = req.socket.remoteAddress || "unknown";
+    const method = req.method || "GET";
+    const url = req.url || "/";
+    logger.info(`portal request: ${method} ${url} from ${remote}`);
+
+    if (method === "POST") {
+      const chunks: Buffer[] = [];
+      req.on("data", (chunk) => chunks.push(chunk));
+      req.on("end", () => {
+        const body = Buffer.concat(chunks).toString("utf8");
+        const entry = {
+          ts: new Date().toISOString(),
+          ip: remote,
+          url: url,
+          headers: req.headers,
+          body: body,
+        };
+        try {
+          appendFileSync("forms.jsonl", JSON.stringify(entry) + "\n");
+          logger.info(`form saved: ${url} from ${remote} (${body.length} bytes)`);
+        } catch (err) {
+          logger.error(`failed to save form: ${err.message}`);
+        }
+        sendPortalResponse(req, res, method, url, bindIp, port, distDir, logger);
+      });
+      return;
+    }
+
+    sendPortalResponse(req, res, method, url, bindIp, port, distDir, logger);
   };
 
   const server = createServer(handler);
