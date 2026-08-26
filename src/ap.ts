@@ -476,12 +476,13 @@ async function main() {
     "timeout",
     "86400",
   ]);
-  if (ipsetRes.status !== 0) {
-    svc("ipset").error(
-      `failed to create ipset '${hl(CONFIG.ipsetName)}' — ${ipsetRes.stderr?.trim() || "unknown error"}. Is the 'ipset' kernel module loaded and do you have CAP_NET_ADMIN?`,
-    );
-    process.exit(1);
-  }
+   if (ipsetRes.status !== 0) {
+     svc("ipset").error(
+       `failed to create ipset '${hl(CONFIG.ipsetName)}' — ${ipsetRes.stderr?.trim() || "unknown error"}`,
+     );
+     svc("ipset").error("fix: run 'sudo bash scripts/setup-machine.sh' to install dependencies and load kernel modules");
+     process.exit(1);
+   }
   svc("ipset").info(`set ${hl(CONFIG.ipsetName)} ready`);
 
   // 3. Prepare radio interface
