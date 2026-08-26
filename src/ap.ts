@@ -461,7 +461,8 @@ async function main() {
 
   runQuiet("ip", ["addr", "flush", "dev", AP_IFACE]);
   runQuiet("ip", ["link", "set", AP_IFACE, "down"]);
-  run("mkdir", ["-p", CONFIG.ctrlDir]);
+   run("mkdir", ["-p", CONFIG.ctrlDir]);
+   runQuiet("chmod", ["755", CONFIG.ctrlDir]);
   await sleep(1000);
 
   // 2. Initialize ipset
@@ -744,9 +745,12 @@ async function main() {
     streamToLog(cliProc.stderr, "hostapd_cli", "warn", svc);
     svc("hostapd_cli").info(`running, pid ${hl(cliProc.pid)}`);
   } else {
-    svc("hostapd_cli").warn(
-      `${hl(CONFIG.notifyScript)} not found or missing +x permission`,
-    );
+     svc("hostapd_cli").warn(
+       `${hl(CONFIG.notifyScript)} not found or missing +x permission`,
+     );
+     svc("hostapd_cli").warn(
+       `fix: sudo cp scripts/hostapd-notify.sh ${hl(CONFIG.notifyScript)} && sudo chmod +x ${hl(CONFIG.notifyScript)}`,
+     );
   }
 
   console.log();

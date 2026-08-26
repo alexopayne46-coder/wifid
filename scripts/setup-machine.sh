@@ -38,7 +38,7 @@ log_error() {
 log_info "setup" "wifid AP Portal — machine setup"
 
 # --- Packages ---
-log_info "setup" "[1/3] installing packages..."
+log_info "setup" "[1/5] installing packages..."
 if command -v pacman &>/dev/null; then
   sudo pacman -S --noconfirm ipset hostapd dnsmasq iptables iw rfkill
 elif command -v apt &>/dev/null; then
@@ -50,14 +50,25 @@ fi
 log_info "setup" "packages installed"
 
 # --- Kernel modules ---
-log_info "setup" "[2/3] loading kernel modules..."
+log_info "setup" "[2/5] loading kernel modules..."
 sudo modprobe ip_set 2>/dev/null || true
 sudo modprobe ip_set_hash_ip 2>/dev/null || true
 sudo modprobe nf_conntrack 2>/dev/null || true
 log_info "setup" "kernel modules loaded"
 
 # --- Sysctl ---
-log_info "setup" "[3/3] enabling forwarding..."
+log_info "setup" "[3/5] setting up hostapd control interface dir..."
+sudo mkdir -p /var/run/hostapd
+sudo chown root:root /var/run/hostapd
+sudo chmod 755 /var/run/hostapd
+log_info "setup" "hostapd control dir ready"
+
+log_info "setup" "[4/5] installing hostapd notify script..."
+sudo cp scripts/hostapd-notify.sh /usr/local/bin/hostapd-notify.sh
+sudo chmod +x /usr/local/bin/hostapd-notify.sh
+log_info "setup" "notify script installed"
+
+log_info "setup" "[5/5] enabling forwarding..."
 sudo sysctl -w net.ipv4.ip_forward=1 >/dev/null
 log_info "setup" "forwarding enabled"
 

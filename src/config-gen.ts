@@ -81,8 +81,11 @@ export function prepareRuntimeConf(src, out, label, AP_IFACE) {
   content = /^interface=.*$/m.test(content)
     ? content.replace(/^interface=.*$/m, ifaceLine)
     : content.trimEnd() + `\n${ifaceLine}\n`;
-  if (label === "hostapd") {
-    if (!/^nohwcrypt=.*$/m.test(content)) {
+   if (label === "hostapd") {
+     if (!/^ctrl_interface=.*$/m.test(content)) {
+       content = content.trimEnd() + `\nctrl_interface=/var/run/hostapd\n`;
+     }
+     if (!/^nohwcrypt=.*$/m.test(content)) {
       let supported = false;
       try {
         const help = runQuiet("hostapd", ["-h"]).stdout || "";
