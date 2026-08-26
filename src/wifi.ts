@@ -13,12 +13,18 @@ export function detectApIface() {
   } catch {
     return null;
   }
-  const pattern = new RegExp(`^${CONFIG.apIfacePrefix}(\\d+)$`);
-  const matches = entries
-    .map((name) => ({ name, match: name.match(pattern) }))
-    .filter((e) => e.match)
-    .sort((a, b) => Number(a.match[1]) - Number(b.match[1]));
-  return matches.length ? matches[0].name : null;
+  const prefixes = Array.isArray(CONFIG.apIfacePrefix)
+    ? CONFIG.apIfacePrefix
+    : [CONFIG.apIfacePrefix];
+  for (const prefix of prefixes) {
+    const pattern = new RegExp(`^${prefix}(\\d+)$`);
+    const matches = entries
+      .map((name) => ({ name, match: name.match(pattern) }))
+      .filter((e) => e.match)
+      .sort((a, b) => Number(a.match[1]) - Number(b.match[1]));
+    if (matches.length) return matches[0].name;
+  }
+  return null;
 }
 
 export function getApInterface() {
@@ -26,8 +32,12 @@ export function getApInterface() {
   if (!AP_IFACE) {
     AP_IFACE = detectApIface();
     if (!AP_IFACE) {
+      const prefixes = Array.isArray(CONFIG.apIfacePrefix)
+        ? CONFIG.apIfacePrefix
+        : [CONFIG.apIfacePrefix];
+      const attempted = prefixes.map((p) => hl(p + "*")).join(", ");
       svc("wifi").error(
-        `no interface matching ${hl(CONFIG.apIfacePrefix + "*")} found — is the adapter plugged in?`,
+        `no interface matching ${attempted} found — is the adapter plugged in?`,
       );
       process.exit(1);
     }

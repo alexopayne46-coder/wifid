@@ -177,7 +177,7 @@ export const CONFIG = {
   // Prefix shared by the USB Wi-Fi adapter's interface names; the trailing
   // number can change between plug-ins (wlp0s20f0u1, ...u2, ...u3, ...),
   // so we auto-detect whichever one currently exists.
-  apIfacePrefix: "wlp0s20f0u",
+  apIfacePrefix: ["wlp0s20f0u", "wlp0s20u2u"],
   apIp: "192.168.12.1/24",
   ssid: AP_SSID,
   bssid: AP_BSSID,
