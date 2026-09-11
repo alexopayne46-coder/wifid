@@ -18,6 +18,9 @@ app.use((req, res, next) => {
   if (req.url.endsWith(".js")) {
     res.setHeader("Content-Type", "application/javascript");
   }
+  if (req.url.endsWith(".webmanifest")) {
+    res.setHeader("Content-Type", "application/manifest+json");
+  }
   next();
 });
 

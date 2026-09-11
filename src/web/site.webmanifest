@@ -1,0 +1,9 @@
+{
+  "name": "AP Controller",
+  "short_name": "AP",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#101010",
+  "theme_color": "#1a1a1a",
+  "icons": []
+}
