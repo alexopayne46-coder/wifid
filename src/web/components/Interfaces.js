@@ -48,6 +48,7 @@ export class Interfaces extends Component {
                     <th>TX</th>
                     <th>RX</th>
                     <th>Driver</th>
+                    <th>Restarts</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -61,6 +62,7 @@ export class Interfaces extends Component {
                         <td>${iface.tx ? iface.tx.toFixed(0) + " MBit/s" : "-"}</td>
                         <td>${iface.rx ? iface.rx.toFixed(0) + " MBit/s" : "-"}</td>
                         <td>${iface.driver}</td>
+                        <td>${iface.restarts || 0}</td>
                       </tr>
                     `;
                   })}

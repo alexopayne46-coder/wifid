@@ -1,6 +1,7 @@
 import { WebBinFunction } from "./WebBinFunction.ts";
 import { detectAllWirelessInterfaces } from "../wifi.ts";
 import { getConnectedClients } from "./shared.ts";
+import { getRestartCount } from "../hostapd.ts";
 import { readFileSync, existsSync, readlinkSync } from "node:fs";
 
 function extractIfaceNumber(name: string): string {
@@ -43,6 +44,7 @@ export class InterfacesFunction extends WebBinFunction {
       tx: txByIface.get(name) || 0,
       rx: rxByIface.get(name) || 0,
       driver: getDriver(name),
+      restarts: getRestartCount(name),
     }));
   }
 }
