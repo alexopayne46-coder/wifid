@@ -9,9 +9,10 @@ import { Logs } from "./Logs.js";
 import { MeshInfo } from "./MeshInfo.js";
 import { Actions } from "./Actions.js";
 import { Settings } from "./Settings.js";
+import { Drawer } from "./Drawer.js";
 
 export class App extends Component {
-  state = { page: "status", apInfo: null };
+  state = { page: "status", apInfo: null, drawerOpen: false };
 
   componentDidMount() {
     apiCall("apInfo")
@@ -19,9 +20,17 @@ export class App extends Component {
       .catch(() => {});
   }
 
-  render(_, { page, apInfo }) {
+  toggleDrawer = () => {
+    this.setState((prev) => ({ drawerOpen: !prev.drawerOpen }));
+  };
+
+  closeDrawer = () => {
+    this.setState({ drawerOpen: false });
+  };
+
+  render(_, { page, apInfo, drawerOpen }) {
     return html`
-      <${Header} apInfo=${apInfo} />
+      <${Header} apInfo=${apInfo} onToggleDrawer=${this.toggleDrawer} />
       <${Nav} page=${page} onNavigate=${(p) => this.setState({ page: p })} />
       <div class="container">
         ${page === "status" && html`<${Status} />`}
@@ -33,6 +42,7 @@ export class App extends Component {
         ${page === "actions" && html`<${Actions} />`}
         ${page === "settings" && html`<${Settings} />`}
       </div>
+      <${Drawer} open=${drawerOpen} onClose=${this.closeDrawer} />
     `;
   }
 }
