@@ -20,10 +20,21 @@ export class Status extends Component {
     this.setState({ apInfo: apInfoData.result, sys: sysData.result });
   }
 
+  handleStop = () => {
+    if (window.confirm("Stop AP? This will shut down the access point.")) {
+      apiCall("stop")
+        .then(() => alert("AP is shutting down..."))
+        .catch((err) => alert("Error: " + (err.error || err.message)));
+    }
+  };
+
   render(_, { apInfo, sys }) {
     return html`
       <div class="card">
-        <h2>Status</h2>
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <h2>Status</h2>
+          <button class="btn danger" onClick=${this.handleStop}>Stop AP</button>
+        </div>
         <div class="status">
           <div class="status-dot" />
           <span>AP Running</span>

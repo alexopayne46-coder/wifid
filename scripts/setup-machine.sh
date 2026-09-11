@@ -40,7 +40,14 @@ log_info "setup" "wifid AP Portal — machine setup"
 # --- Packages ---
 log_info "setup" "[1/5] installing packages..."
 if command -v pacman &>/dev/null; then
+  sudo pacman -Syu   # update first.
+
   sudo pacman -S --noconfirm ipset hostapd dnsmasq iptables iw rfkill
+
+  # yes. AI its a best code-generator..
+  # yes you just comment if you dont want any software
+  sudo pacman -S --noconfirm --needed usbutils pciutils net-tools iproute2 wireless_tools iw wpa_supplicant dhcpcd aircrack-ng ethtool bridge-utils hostapd dnsmasq
+
 elif command -v apt &>/dev/null; then
   sudo apt update
   sudo apt install -y ipset hostapd dnsmasq iptables iproute2 iw rfkill
@@ -49,14 +56,12 @@ elif command -v dnf &>/dev/null; then
 fi
 log_info "setup" "packages installed"
 
-# --- Kernel modules ---
 log_info "setup" "[2/5] loading kernel modules..."
 sudo modprobe ip_set 2>/dev/null || true
 sudo modprobe ip_set_hash_ip 2>/dev/null || true
 sudo modprobe nf_conntrack 2>/dev/null || true
 log_info "setup" "kernel modules loaded"
 
-# --- Sysctl ---
 log_info "setup" "[3/5] setting up hostapd control interface dir..."
 sudo mkdir -p /var/run/hostapd
 sudo chown root:root /var/run/hostapd

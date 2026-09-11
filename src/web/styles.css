@@ -25,7 +25,6 @@ body {
   color: #f0f0f0;
   padding: 10px 14px;
   margin-bottom: 12px;
-  border-bottom: 1px solid #3a3a3a;
 }
 
 .header-left {
@@ -251,6 +250,14 @@ body {
   color: #8a8a8a;
 }
 
+.mesh-icon {
+  color: #6fc46f;
+  font-size: 13px;
+  margin-left: 6px;
+  vertical-align: middle;
+  line-height: 1;
+}
+
 .settings-table {
   width: 100%;
   border-collapse: collapse;
@@ -299,6 +306,24 @@ body {
   color: #d8d8d8;
 }
 
+.iface-table th:nth-child(1),
+.iface-table td:nth-child(1) { width: 40px; }
+
+.iface-table th:nth-child(2),
+.iface-table td:nth-child(2) { width: auto; }
+
+.iface-table th:nth-child(3),
+.iface-table td:nth-child(3) { width: 60px; text-align: right; }
+
+.iface-table th:nth-child(4),
+.iface-table td:nth-child(4) { width: 90px; text-align: right; }
+
+.iface-table th:nth-child(5),
+.iface-table td:nth-child(5) { width: 90px; text-align: right; }
+
+.iface-table th:nth-child(6),
+.iface-table td:nth-child(6) { width: auto; }
+
 .argv-editor {
   width: 100%;
   background: #1a1a1a;
@@ -333,6 +358,22 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.admin-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.admin-col {
+  min-width: 0;
+}
+
+@media (max-width: 900px) {
+  .admin-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .logs-container {

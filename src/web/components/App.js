@@ -2,14 +2,11 @@ import { html, Component, apiCall } from "../app.js";
 import { Nav } from "./Nav.js";
 import { Header } from "./Header.js";
 import { Status } from "./Status.js";
-import { Portal } from "./Portal.js";
 import { Interfaces } from "./Interfaces.js";
-import { DnsQueries } from "./DnsQueries.js";
 import { Logs } from "./Logs.js";
-import { MeshInfo } from "./MeshInfo.js";
-import { Actions } from "./Actions.js";
 import { Settings } from "./Settings.js";
 import { Drawer } from "./Drawer.js";
+import { AdministrationPortal } from "./AdministrationPortal.js";
 
 export class App extends Component {
   state = {
@@ -80,12 +77,9 @@ export class App extends Component {
       <${Nav} page=${page} onNavigate=${(p) => this.setState({ page: p })} />
       <div class="container">
         ${page === "status" && html`<${Status} />`}
-        ${page === "portal" && html`<${Portal} />`}
+        ${page === "administration" && html`<${AdministrationPortal} />`}
         ${page === "interfaces" && html`<${Interfaces} onSelect=${this.openDrawerForIface} />`}
-        ${page === "dns" && html`<${DnsQueries} />`}
         ${page === "logs" && html`<${Logs} />`}
-        ${page === "mesh" && html`<${MeshInfo} />`}
-        ${page === "actions" && html`<${Actions} />`}
         ${page === "settings" && html`<${Settings} />`}
       </div>
       <${Drawer} open=${drawerOpen} onClose=${this.closeDrawer} title=${drawerTitle}>

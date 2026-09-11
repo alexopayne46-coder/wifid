@@ -7,6 +7,7 @@ import {
   appendFileSync,
 } from "node:fs";
 import { spawnSync } from "node:child_process";
+import path from "node:path";
 import { BunRequest } from "bun";
 import { recordPortalRequest } from "./portal-requests.ts";
 
@@ -135,13 +136,19 @@ export function startPortalServer(
       return;
     }
 
-    let filePath = `${distDir}${pathname}`;
-    if (pathname === "/") filePath = `${distDir}/index.html`;
+    let resolved = pathname === "/"
+      ? path.join(distDir, "index.html")
+      : path.resolve(distDir, pathname);
+    if (!resolved.startsWith(path.resolve(distDir) + path.sep) && resolved !== path.resolve(distDir)) {
+      logger.warn(`blocked path traversal attempt: ${pathname}`);
+      res.writeHead(403, { "Content-Type": "text/plain" });
+      res.end("Forbidden");
+      return;
+    }
 
     try {
-      const content = readFileSync(filePath);
-      const ext =
-        pathname === "/" ? ".html" : pathname.slice(pathname.lastIndexOf("."));
+      const content = readFileSync(resolved);
+      const ext = pathname === "/" ? ".html" : pathname.slice(pathname.lastIndexOf("."));
       const contentType =
         mimeTypes[ext as keyof typeof mimeTypes] || "application/octet-stream";
       res.writeHead(200, { "Content-Type": contentType });

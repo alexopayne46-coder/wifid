@@ -1,21 +1,27 @@
 import { html, Component, apiCall } from "../app.js";
 
 export class Interfaces extends Component {
-  state = { interfaces: [], loading: true };
+  state = { interfaces: [], meshIfaces: [], loading: true };
 
   componentDidMount() {
-    this.loadInterfaces();
-    this._interval = setInterval(() => this.loadInterfaces(), 5000);
+    this.loadData();
+    this._interval = setInterval(() => this.loadData(), 5000);
   }
 
   componentWillUnmount() {
     clearInterval(this._interval);
   }
 
-  loadInterfaces() {
-    apiCall("interfaces")
-      .then((data) => this.setState({ interfaces: data.result || [], loading: false }))
-      .catch(() => this.setState({ loading: false }));
+  async loadData() {
+    const [ifacesData, apData] = await Promise.all([
+      apiCall("interfaces"),
+      apiCall("apInfo").catch(() => ({ result: {} })),
+    ]);
+    this.setState({
+      interfaces: ifacesData.result || [],
+      meshIfaces: (apData.result?.mesh?.interfaces || []).map((s) => s.trim()),
+      loading: false,
+    });
   }
 
   handleSelect = (iface) => {
@@ -24,7 +30,7 @@ export class Interfaces extends Component {
     }
   };
 
-  render(_, { interfaces, loading }) {
+  render(_, { interfaces, meshIfaces, loading }) {
     return html`
       <div class="card">
         <h2>Wireless Interfaces</h2>
@@ -33,20 +39,31 @@ export class Interfaces extends Component {
           : interfaces.length === 0
             ? html`<div class="ap-info">No wireless interfaces found</div>`
             : html`
-              <table class="settings-table clients-table">
+              <table class="settings-table clients-table iface-table">
                 <thead>
                   <tr>
+                    <th>#</th>
                     <th>Interface</th>
                     <th>Clients</th>
+                    <th>TX</th>
+                    <th>RX</th>
+                    <th>Driver</th>
                   </tr>
                 </thead>
                 <tbody>
-                  ${interfaces.map((iface) => html`
-                    <tr key=${iface.name} onClick=${() => this.handleSelect(iface.name)} style="cursor:pointer">
-                      <td>${iface.name}</td>
-                      <td>${iface.clients}</td>
-                    </tr>
-                  `)}
+                  ${interfaces.map((iface) => {
+                    const isMesh = meshIfaces.includes(iface.name);
+                    return html`
+                      <tr key=${iface.name} onClick=${() => this.handleSelect(iface.name)} style="cursor:pointer">
+                        <td>${iface.number}</td>
+                        <td>${iface.name} ${isMesh ? html`<span class="mesh-icon" title="Mesh">◈</span>` : ""}</td>
+                        <td>${iface.clients}</td>
+                        <td>${iface.tx ? iface.tx.toFixed(0) + " MBit/s" : "-"}</td>
+                        <td>${iface.rx ? iface.rx.toFixed(0) + " MBit/s" : "-"}</td>
+                        <td>${iface.driver}</td>
+                      </tr>
+                    `;
+                  })}
                 </tbody>
               </table>
             `

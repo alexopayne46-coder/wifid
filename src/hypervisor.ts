@@ -2,7 +2,6 @@
 
 import { spawn, ChildProcess } from "node:child_process";
 import { readFileSync } from "node:fs";
-import { sleep } from "./utils.ts";
 
 const ARGV_FILE = ".argv.txt";
 
@@ -36,6 +35,24 @@ function tokenizeCommand(line: string): string[] {
   return tokens;
 }
 
+const ALLOWED_FLAGS = new Set([
+  "-m", "--mode",
+  "-t", "--trial",
+  "-p", "--passthrough",
+  "-D", "--dns-overwrite",
+  "-S", "--server-bind",
+  "-n", "--ssid",
+  "-b", "--bssid",
+  "-w", "--password",
+  "-o", "--open",
+  "-P", "--portal",
+  "-d", "--debug",
+  "-W", "--webController",
+  "--webControllerAddr",
+  "--mesh",
+  "--monitor-iface-fail-and-restart",
+]);
+
 function validateCommand(tokens: string[]): { valid: boolean; error?: string } {
   if (!tokens.length) {
     return { valid: false, error: "empty command" };
@@ -57,6 +74,13 @@ function validateCommand(tokens: string[]): { valid: boolean; error?: string } {
       valid: false,
       error: "command must include 'src/ap.ts' as the target script",
     };
+  }
+
+  for (let i = 2; i < tokens.length; i++) {
+    const t = tokens[i];
+    if (t.startsWith("-") && !ALLOWED_FLAGS.has(t)) {
+      return { valid: false, error: `disallowed flag: ${t}` };
+    }
   }
 
   return { valid: true };
