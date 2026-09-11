@@ -17,6 +17,17 @@ export interface HostapdState {
   configPath: string;
 }
 
+const restartCounts = new Map<string, number>();
+
+export function getRestartCount(iface: string): number {
+  return restartCounts.get(iface) || 0;
+}
+
+export function incrementRestartCount(iface: string): void {
+  const cur = restartCounts.get(iface) || 0;
+  restartCounts.set(iface, cur + 1);
+}
+
 export function createHostapdState(
   apIface: string,
   configPath: string,
@@ -196,6 +207,7 @@ export async function restartHostapd(
   svc("hostapd").warn(
     `interface stuck / probe send-failed loop detected on ${apIface} — restarting radio + hostapd`,
   );
+  incrementRestartCount(apIface);
   try {
     if (state.hostapdProc) {
       try {
