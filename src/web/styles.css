@@ -413,13 +413,14 @@ body {
 .drawer {
   position: fixed;
   top: 0;
-  left: 0;
+  right: 0;
   width: 340px;
   max-width: 85vw;
   height: 100vh;
   background: #161616;
-  border-right: 1px solid #3a3a3a;
-  transform: translateX(-100%);
+  border-left: 1px solid #3a3a3a;
+  border-right: none;
+  transform: translateX(100%);
   transition: transform 0.2s;
   z-index: 999;
   display: flex;

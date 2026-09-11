@@ -28,28 +28,6 @@ export class App extends Component {
       .catch(() => {});
   }
 
-  openDrawer = () => {
-    this.setState({ drawerOpen: true, drawerLoading: true, drawerTitle: "Clients", drawerIface: "all" });
-    Promise.all([
-      apiCall("clients"),
-      apiCall("clientsActive"),
-      apiCall("dhcpLeases"),
-    ])
-      .then(([clientsData, activeData, leasesData]) => {
-        const activeMap = new Map((activeData.result || []).map((c) => [c.mac, c]));
-        const merged = (clientsData.result || []).map((c) => ({
-          ...c,
-          ...activeMap.get(c.mac),
-        }));
-        const seen = new Set(merged.map((c) => c.mac));
-        for (const c of activeData.result || []) {
-          if (!seen.has(c.mac)) merged.push(c);
-        }
-        this.setState({ drawerClients: merged, drawerLoading: false });
-      })
-      .catch(() => this.setState({ drawerLoading: false }));
-  };
-
   openDrawerForIface = (iface) => {
     this.setState({ drawerOpen: true, drawerIface: iface, drawerLoading: true, drawerTitle: `Clients on ${iface}` });
     apiCall("clientsByInterface", { interface: iface })
@@ -98,7 +76,7 @@ export class App extends Component {
         `;
 
     return html`
-      <${Header} apInfo=${apInfo} onToggleDrawer=${this.openDrawer} />
+      <${Header} apInfo=${apInfo} />
       <${Nav} page=${page} onNavigate=${(p) => this.setState({ page: p })} />
       <div class="container">
         ${page === "status" && html`<${Status} />`}
