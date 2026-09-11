@@ -3,7 +3,10 @@ import { html } from "../app.js";
 export function Nav({ page, onNavigate }) {
   const tabs = [
     { id: "status", label: "Status" },
+    { id: "portal", label: "Portal" },
     { id: "clients", label: "Clients" },
+    { id: "dns", label: "DNS Queries" },
+    { id: "logs", label: "Logs" },
     { id: "mesh", label: "Mesh" },
     { id: "actions", label: "Actions" },
     { id: "settings", label: "Settings" },

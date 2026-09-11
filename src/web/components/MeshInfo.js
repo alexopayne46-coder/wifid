@@ -1,17 +1,17 @@
-import { html, Component } from "../app.js";
+import { html, Component, apiCall } from "../app.js";
 
 export class MeshInfo extends Component {
   state = { loading: true, details: [] };
 
   componentDidMount() {
-    fetch("/api/ap-info")
-      .then((res) => res.json())
+    apiCall("apInfo")
       .then((data) => {
+        const apInfo = data.result || {};
         const details = [];
-        if (data.mesh && data.mesh.enabled) {
+        if (apInfo.mesh && apInfo.mesh.enabled) {
           details.push(["Status", "Enabled"]);
-          details.push(["Interfaces", data.mesh.interfaces.join(", ")]);
-          details.push(["Count", String(data.mesh.interfaces.length)]);
+          details.push(["Interfaces", apInfo.mesh.interfaces.join(", ")]);
+          details.push(["Count", String(apInfo.mesh.interfaces.length)]);
         } else {
           details.push(["Status", "Disabled"]);
         }

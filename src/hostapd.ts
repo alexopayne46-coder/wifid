@@ -4,6 +4,8 @@ import { spawn } from "node:child_process";
 
 import { CONFIG, svc } from "./config.ts";
 import { runQuiet, sleep, streamToLog } from "./utils.ts";
+import { writeLog } from "./log-buffer.ts";
+import { updateClientFromStation } from "./client-tracker.ts";
 
 export interface HostapdState {
   hostapdProc: any;
@@ -94,9 +96,23 @@ export function watchHostapdLine(
   apIface: string,
   restartFn: () => void,
 ) {
+  if (!CONFIG.monitorIfaceFailAndRestart) {
+    return;
+  }
+
+  const staMatch = line.match(/^STA\s+([0-9a-f:]+)/i);
+  if (staMatch) {
+    const mac = staMatch[1];
+    updateClientFromStation({ mac, interface: apIface });
+  }
+
+  if (/AP-STA-CONNECTED/.test(line)) {
+    const m = line.match(/AP-STA-CONNECTED\s+([0-9a-f:]+)/i);
+    if (m) updateClientFromStation({ mac: m[1], interface: apIface });
+  }
+
   if (/INTERFACE-DISABLED/.test(line)) {
     state.sawInterfaceDisabled = true;
-    state.probeSendFailStreak = 0;
     return;
   }
   if (/INTERFACE-ENABLED/.test(line)) {
@@ -110,11 +126,13 @@ export function watchHostapdLine(
     state.probeSendFailStreak++;
     if (state.probeSendFailStreak >= PROBE_FAIL_RESTART_THRESHOLD) {
       state.probeSendFailStreak = 0;
+      svc("hostapd").warn(
+        `${apIface}: ${PROBE_FAIL_RESTART_THRESHOLD} probe send failures — restarting`
+      );
       restartFn();
     }
     return;
   }
-  state.probeSendFailStreak = 0;
 }
 
 export function applyApAddressing(apIface: string) {
@@ -138,13 +156,19 @@ export function startHostapd(
   state.hostapdProc = spawn("hostapd", [hostapdConf], {
     stdio: ["ignore", "pipe", "pipe"],
   });
-  streamToLog(state.hostapdProc.stdout, "hostapd", "debug", svc);
+  streamToLog(state.hostapdProc.stdout, "hostapd", "debug", svc, (line: string) => {
+    writeLog("hostapd", "debug", line);
+    watchHostapdLine(state, line, apIface, restartFn);
+  });
   streamToLog(
     state.hostapdProc.stderr,
     "hostapd",
     "warn",
     svc,
-    (line: string) => watchHostapdLine(state, line, apIface, restartFn),
+    (line: string) => {
+      writeLog("hostapd", "warn", line);
+      watchHostapdLine(state, line, apIface, restartFn);
+    },
   );
   state.hostapdProc.on("exit", (code: number) => {
     if (!cleaningUp && !state.hostapdRestarting) {
@@ -162,12 +186,15 @@ export async function restartHostapd(
   cleanupFn: (code: number) => void,
   restartFn: () => void,
 ) {
-  if (state.hostapdRestarting || cleaningUp) return;
+  if (state.hostapdRestarting || cleaningUp) {
+    svc("hostapd").warn(`restart skipped for ${apIface}: already restarting or cleaning up`);
+    return;
+  }
   state.hostapdRestarting = true;
   state.sawInterfaceDisabled = false;
   state.probeSendFailStreak = 0;
   svc("hostapd").warn(
-    "interface stuck / probe send-failed loop detected — restarting radio + hostapd",
+    `interface stuck / probe send-failed loop detected on ${apIface} — restarting radio + hostapd`,
   );
   try {
     if (state.hostapdProc) {
@@ -187,9 +214,9 @@ export async function restartHostapd(
     startHostapd(state, hostapdConf, apIface, cleaningUp, cleanupFn, restartFn);
     await sleep(500);
     if (state.hostapdProc.exitCode === null) {
-      svc("hostapd").info(`restarted, pid ${state.hostapdProc.pid}`);
+      svc("hostapd").info(`restarted ${apIface}, pid ${state.hostapdProc.pid}`);
     } else {
-      svc("hostapd").error("restart failed — hostapd exited on startup");
+      svc("hostapd").error(`restart failed for ${apIface} — hostapd exited on startup`);
     }
   } finally {
     state.hostapdRestarting = false;

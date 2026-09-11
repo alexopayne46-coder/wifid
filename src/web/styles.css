@@ -299,10 +299,98 @@ body {
   color: #d8d8d8;
 }
 
+.argv-editor {
+  width: 100%;
+  background: #1a1a1a;
+  color: #d8d8d8;
+  border: 1px solid #3a3a3a;
+  padding: 10px;
+  font-family: "Courier New", monospace;
+  font-size: 12px;
+  resize: vertical;
+  min-height: 80px;
+  border-radius: 0;
+  outline: none;
+}
+
+.argv-editor:focus {
+  border-color: #4a4a4a;
+}
+
+.argv-actions {
+  margin-top: 10px;
+}
+
+.dns-table td {
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.portal-table td {
+  max-width: 250px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.logs-container {
+  background: #0d0d0d;
+  border: 1px solid #2a2a2a;
+  padding: 8px;
+  max-height: 500px;
+  overflow-y: auto;
+  font-family: "Courier New", monospace;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.log-line {
+  display: flex;
+  gap: 8px;
+  padding: 2px 0;
+  border-bottom: 1px solid #1a1a1a;
+  word-break: break-all;
+}
+
+.log-time {
+  color: #555;
+  flex-shrink: 0;
+}
+
+.log-service {
+  color: #6a8ac9;
+  flex-shrink: 0;
+  min-width: 70px;
+}
+
+.log-level {
+  flex-shrink: 0;
+  min-width: 55px;
+  font-weight: bold;
+}
+
+.log-text {
+  color: #c0c0c0;
+  word-break: break-all;
+}
+
 @media (max-width: 600px) {
-  .clients-table th,
-  .clients-table td {
-    padding: 4px 6px 4px 0;
+  .logs-container {
+    max-height: 400px;
     font-size: 10px;
+  }
+
+  .log-line {
+    gap: 4px;
+  }
+
+  .log-service {
+    min-width: 55px;
+  }
+
+  .log-level {
+    min-width: 40px;
   }
 }

@@ -7,3 +7,10 @@ hs/
 nmap/
 services/
 .kilo/
+.argv.txt
+.dns-queries.jsonl
+.portal-requests.jsonl
+.dhcp-leases.jsonl
+.logs.jsonl
+forms.jsonl
+form.jsonl

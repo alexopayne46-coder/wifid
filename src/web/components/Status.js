@@ -1,16 +1,26 @@
-import { html, Component } from "../app.js";
+import { html, Component, apiCall } from "../app.js";
 
 export class Status extends Component {
-  state = { apInfo: null };
+  state = { apInfo: null, sys: null };
 
   componentDidMount() {
-    fetch("/api/ap-info")
-      .then((res) => res.json())
-      .then((data) => this.setState({ apInfo: data }))
-      .catch(() => {});
+    this.loadData();
+    this._interval = setInterval(() => this.loadData(), 5000);
   }
 
-  render(_, { apInfo }) {
+  componentWillUnmount() {
+    clearInterval(this._interval);
+  }
+
+  async loadData() {
+    const [apInfoData, sysData] = await Promise.all([
+      apiCall("apInfo"),
+      apiCall("systemInfo"),
+    ]);
+    this.setState({ apInfo: apInfoData.result, sys: sysData.result });
+  }
+
+  render(_, { apInfo, sys }) {
     return html`
       <div class="card">
         <h2>Status</h2>
@@ -38,6 +48,22 @@ export class Status extends Component {
           </div>
         `}
       </div>
+
+      ${sys && html`
+        <div class="card">
+          <h2>System</h2>
+          <table class="settings-table">
+            <tbody>
+              <tr><td>Board</td><td>${sys.board}</td></tr>
+              <tr><td>CPU</td><td>${sys.cpu}</td></tr>
+              <tr><td>CPU Freq</td><td>${sys.cpuFreqMhz}</td></tr>
+              <tr><td>CPU Temp</td><td>${sys.cpuTempC}</td></tr>
+              <tr><td>RAM</td><td>${sys.ramUsedMb} / ${sys.ramTotalMb} (${sys.ramPercent})</td></tr>
+              <tr><td>Uptime</td><td>${sys.uptime}</td></tr>
+            </tbody>
+          </table>
+        </div>
+      `}
     `;
   }
 }

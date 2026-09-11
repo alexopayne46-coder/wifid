@@ -137,36 +137,40 @@ const { values: args } = parseArgs({
     mesh: {
       type: "string",
     },
+    "monitor-iface-fail-and-restart": {
+      type: "boolean",
+    },
   },
   strict: false,
 });
 
 if (args.help) {
   console.log(`
-AP + Captive Portal Launcher
+ AP + Captive Portal Launcher
 
-Usage:
-  sudo bun run src/ap.ts [options]
+ Usage:
+   sudo bun run src/ap.ts [options]
 
-Options:
-  -m, --mode <auto|tailscale|wire>    AP routing mode (default: auto)
-  -t, --trial <seconds>               Trial period in seconds before captive portal enforcement (default: 60, 0 to disable)
-  -p, --passthrough <interface>       Local network interface for passthrough/NAT (default: lan)
-  -D, --dns-overwrite <file>          YAML file with DNS overwrites (domain: IP)
-  -S, --server-bind <ip>              Bind the request-logging server to this IP (default: 192.168.12.1)
-  -n, --ssid <name>                   Override the Wi-Fi SSID (default: from hostapd template)
-  -b, --bssid <mac>                   Override the BSSID (MAC) of the AP
-  -w, --password <pass>               WPA2 passphrase (default: changeme123)
-  -o, --open                          Create an open (no password) AP
-  -P, --portal                        Enable captive portal only (no internet, trial disabled)
-  -d, --debug                         Enable debug logging
-  -W, --webController                 Enable web controller UI
-  --webControllerAddr <host:port>     Web controller address (default: 0.0.0.0:8125)
-  --mesh <iface1,iface2,...>         Enable mesh mode with multiple interfaces (comma-separated, or 'auto' for all)
-  -h, --help                          Show this help message
+ Options:
+   -m, --mode <auto|tailscale|wire>    AP routing mode (default: auto)
+   -t, --trial <seconds>               Trial period in seconds before captive portal enforcement (default: 60, 0 to disable)
+   -p, --passthrough <interface>       Local network interface for passthrough/NAT (default: lan)
+   -D, --dns-overwrite <file>          YAML file with DNS overwrites (domain: IP)
+   -S, --server-bind <ip>              Bind the request-logging server to this IP (default: 192.168.12.1)
+   -n, --ssid <name>                   Override the Wi-Fi SSID (default: from hostapd template)
+   -b, --bssid <mac>                   Override the BSSID (MAC) of the AP
+   -w, --password <pass>               WPA2 passphrase (default: changeme123)
+   -o, --open                          Create an open (no password) AP
+   -P, --portal                        Enable captive portal only (no internet, trial disabled)
+   -d, --debug                         Enable debug logging
+   -W, --webController                 Enable web controller UI
+   --webControllerAddr <host:port>     Web controller address (default: 0.0.0.0:8125)
+   --mesh <iface1,iface2,...>         Enable mesh mode with multiple interfaces (comma-separated, or 'auto' for all)
+   --monitor-iface-fail-and-restart   Monitor probe send failures and restart interface (default: true)
+   -h, --help                          Show this help message
 
-Environment Variables (fallbacks):
-  AP_MODE, TAILSCALE_ONLY, AP_TRIAL_SECONDS, NET_PASSTHROUGH, AP_DNS_OVERWRITE, AP_SERVER_BIND, AP_SSID, AP_BSSID, AP_PASSWORD, AP_OPEN, AP_PORTAL, DEBUG
+ Environment Variables (fallbacks):
+   AP_MODE, TAILSCALE_ONLY, AP_TRIAL_SECONDS, NET_PASSTHROUGH, AP_DNS_OVERWRITE, AP_SERVER_BIND, AP_SSID, AP_BSSID, AP_PASSWORD, AP_OPEN, AP_PORTAL, DEBUG, AP_MONITOR_IFACE_FAIL_AND_RESTART
 `);
   process.exit(0);
 }
@@ -194,6 +198,9 @@ export const WEB_CONTROLLER =
   args.webControllerAddr || process.env.AP_WEB_CONTROLLER || "0.0.0.0:8125";
 export const MESH_INTERFACES =
   args.mesh || process.env.AP_MESH_INTERFACES || "";
+export const MONITOR_IFACE_FAIL_AND_RESTART =
+  args["monitor-iface-fail-and-restart"] ??
+  process.env.AP_MONITOR_IFACE_FAIL_AND_RESTART !== "0";
 
 export const CONFIG = {
   // Prefix shared by the USB Wi-Fi adapter's interface names; the trailing
@@ -219,6 +226,7 @@ export const CONFIG = {
   portalDistDir: "./dist",
   webController: WEB_CONTROLLER_ENABLED ? WEB_CONTROLLER : "",
   meshInterfaces: MESH_INTERFACES,
+  monitorIfaceFailAndRestart: MONITOR_IFACE_FAIL_AND_RESTART,
 };
 
 export const CAPTIVE_PORTAL_DNS_DOMAINS = [

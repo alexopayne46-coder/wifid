@@ -1,15 +1,43 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>AP Controller</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+
+  <title>wifi.d — Access Point Controller</title>
+  <meta name="description" content="wifi.d is a lightweight controller for managing and configuring your wireless access points.">
+  <meta name="author" content="wifi.d">
+  <meta name="keywords" content="wifi.d, access point, AP controller, wireless management, network configuration">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#0f172a">
+  <link rel="canonical" href="https://wifid.example.com/">
+
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="wifi.d — Access Point Controller">
+  <meta property="og:description" content="Manage and configure your wireless access points with wifi.d.">
+  <meta property="og:image" content="/og-image.png">
+  <meta property="og:url" content="https://wifid.example.com/">
+  <meta property="og:site_name" content="wifi.d">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="wifi.d — Access Point Controller">
+  <meta name="twitter:description" content="Manage and configure your wireless access points with wifi.d.">
+  <meta name="twitter:image" content="/og-image.png">
+
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/site.webmanifest">
+
+  <link rel="preload" href="/vendor/preact.module.js" as="script" crossorigin>
+  <link rel="preload" href="/vendor/htm.module.js" as="script" crossorigin>
   <link rel="stylesheet" href="/styles.css">
+
   <script type="importmap">
     {
       "imports": {
-        "preact": "https://cdn.jsdelivr.net/npm/preact@10.19.3/dist/preact.module.js",
-        "htm": "https://cdn.jsdelivr.net/npm/htm@3.1.1/dist/htm.module.js"
+        "preact": "/vendor/preact.module.js",
+        "htm": "/vendor/htm.module.js"
       }
     }
   </script>

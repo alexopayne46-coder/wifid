@@ -8,7 +8,7 @@ export function Header({ apInfo }) {
   return html`
     <div class="header">
       <div class="header-left">
-        <h1>AP Controller</h1>
+        <h1>wifi.d</h1>
       </div>
       <div class="header-right">${statusText}</div>
     </div>

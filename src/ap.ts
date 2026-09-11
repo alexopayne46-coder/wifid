@@ -34,6 +34,10 @@ import {
 } from "./iptables.ts";
 import { startTrialWatcher as startTrialWatcherModule } from "./trial.ts";
 import { startWebController, stopWebController } from "./web/web-server.ts";
+import { recordDnsQuery } from "./dns-queries.ts";
+import { recordDhcpLease } from "./dhcp-leases.ts";
+import { writeLog } from "./log-buffer.ts";
+import { updateClientHostname } from "./client-tracker.ts";
 
 if (typeof process.getuid === "function" && process.getuid() !== 0) {
   svc("main").error("please run this script with sudo!");
@@ -167,10 +171,11 @@ process.on("uncaughtException", (err) => {
 });
 
 function triggerRestart() {
+  svc("hostapd").warn("restart triggered by hostapd monitor");
   if (IS_MESH_MODE) {
-    // In mesh mode, restart all hostapd instances
     if (multiHostapdState) {
       for (const [iface, state] of multiHostapdState.states.entries()) {
+        svc("hostapd").warn(`restarting interface: ${hl(iface)}`);
         restartHostapd(
           state,
           HOSTAPD_CONFS[iface],
@@ -379,8 +384,31 @@ async function main() {
   dnsmasqProc = spawn("dnsmasq", ["-C", DNSMASQ_CONF, "-d"], {
     stdio: ["ignore", "pipe", "pipe"],
   });
-  streamToLog(dnsmasqProc.stdout, "dnsmasq", "debug", svc);
-  streamToLog(dnsmasqProc.stderr, "dnsmasq", "debug", svc);
+  streamToLog(dnsmasqProc.stdout, "dnsmasq", "debug", svc, (line: string) => {
+    writeLog("dnsmasq", "debug", line);
+    const m = line.match(/^query\[([^\]]+)\]\s+(\S+)\s+from\s+(\S+)/i);
+    if (m) {
+      const [, qtype, domain, client] = m;
+      recordDnsQuery(domain, qtype, client);
+      svc("dnsmasq").info(`captured query: ${domain} (${qtype}) from ${client}`);
+      return;
+    }
+
+    const dhcp = line.match(/^DHCPACK\s+(\S+)\s+([0-9a-f:]+)(?:\s+(\S+))?/i);
+    if (dhcp) {
+      const ip = dhcp[1];
+      const mac = dhcp[2];
+      const hostname = dhcp[3] || "";
+      recordDhcpLease(mac, ip, hostname);
+      if (hostname) {
+        updateClientHostname(mac, hostname);
+      }
+      svc("dnsmasq").info(`captured lease: ${mac} -> ${ip} (${hostname || "no hostname"})`);
+    }
+  });
+  streamToLog(dnsmasqProc.stderr, "dnsmasq", "debug", svc, (line: string) => {
+    writeLog("dnsmasq", "warn", line);
+  });
   dnsmasqProc.on("exit", (code: number) => {
     if (!cleanupState.cleaningUp) {
       svc("dnsmasq").error(`exited unexpectedly (code ${code})`);

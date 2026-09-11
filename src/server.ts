@@ -8,6 +8,7 @@ import {
 } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { BunRequest } from "bun";
+import { recordPortalRequest } from "./portal-requests.ts";
 
 type Logger = {
   info: (msg: string) => void;
@@ -33,6 +34,7 @@ export function startRequestLogger(
   const handler = (req: IncomingMessage, res: ServerResponse) => {
     const remote = req.socket?.remoteAddress || "unknown";
     logger.info(`request: ${req.method} ${req.url} from ${remote}`);
+    recordPortalRequest(req);
     res.writeHead(200, { "Content-Type": "text/plain" });
     res.end("logged");
   };
@@ -155,6 +157,7 @@ export function startPortalServer(
     const method = req.method || "GET";
     const url = req.url || "/";
     logger.info(`portal request: ${method} ${url} from ${remote}`);
+    recordPortalRequest(req);
 
     if (method === "POST") {
       const chunks: Buffer[] = [];
