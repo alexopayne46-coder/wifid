@@ -1,7 +1,8 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { CONFIG, hl, svc, CAPTIVE_PORTAL_DNS_DOMAINS } from "./config.ts";
+import { runQuiet } from "./utils.ts";
 
-function parseDnsOverwriteYaml(filePath) {
+function parseDnsOverwriteYaml(filePath: string) {
   const records = [];
   const lines = readFileSync(filePath, "utf8").split("\n");
   for (const raw of lines) {
@@ -18,7 +19,7 @@ function parseDnsOverwriteYaml(filePath) {
   return records;
 }
 
-export function detectBand(src) {
+export function detectBand(src: string) {
   try {
     const content = readFileSync(src, "utf8");
     const m = content.match(/^hw_mode\s*=\s*([a-z0-9]+)/im);
@@ -33,7 +34,7 @@ export function detectBand(src) {
   }
 }
 
-export function appendDnsOverwrites(confPath, yamlPath) {
+export function appendDnsOverwrites(confPath: string, yamlPath: string) {
   const records = parseDnsOverwriteYaml(yamlPath);
   if (records.length === 0) return [];
   let content = readFileSync(confPath, "utf8");
@@ -50,7 +51,7 @@ export function appendDnsOverwrites(confPath, yamlPath) {
   return records;
 }
 
-export function applyCaptivePortalDnsOverwrites(confPath) {
+export function applyCaptivePortalDnsOverwrites(confPath: string) {
   const gatewayIp = CONFIG.apIp.split("/")[0];
   let content = readFileSync(confPath, "utf8");
   let added = 0;
@@ -69,7 +70,13 @@ export function applyCaptivePortalDnsOverwrites(confPath) {
   }
 }
 
-export function prepareRuntimeConf(src, out, label, AP_IFACE) {
+export function prepareRuntimeConf(
+  src: string,
+  out: string,
+  label: string,
+  AP_IFACE: string,
+  channel?: number,
+) {
   let content;
   try {
     content = readFileSync(src, "utf8");
@@ -81,11 +88,22 @@ export function prepareRuntimeConf(src, out, label, AP_IFACE) {
   content = /^interface=.*$/m.test(content)
     ? content.replace(/^interface=.*$/m, ifaceLine)
     : content.trimEnd() + `\n${ifaceLine}\n`;
-   if (label === "hostapd") {
-     if (!/^ctrl_interface=.*$/m.test(content)) {
-       content = content.trimEnd() + `\nctrl_interface=/var/run/hostapd\n`;
-     }
-     if (!/^nohwcrypt=.*$/m.test(content)) {
+  if (label === "hostapd") {
+    // Set channel if specified for mesh mode
+    if (channel !== undefined) {
+      const channelLine = `channel=${channel}`;
+      content = /^channel=.*$/m.test(content)
+        ? content.replace(/^channel=.*$/m, channelLine)
+        : content.trimEnd() + `\n${channelLine}\n`;
+      svc(label).debug(
+        `channel set to ${hl(String(channel))} for ${hl(AP_IFACE)}`,
+      );
+    }
+
+    if (!/^ctrl_interface=.*$/m.test(content)) {
+      content = content.trimEnd() + `\nctrl_interface=/var/run/hostapd\n`;
+    }
+    if (!/^nohwcrypt=.*$/m.test(content)) {
       let supported = false;
       try {
         const help = runQuiet("hostapd", ["-h"]).stdout || "";

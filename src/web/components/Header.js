@@ -1,0 +1,16 @@
+import { html } from "../app.js";
+
+export function Header({ apInfo }) {
+  const statusText = apInfo
+    ? `SSID: ${apInfo.ssid} | Band: ${apInfo.band} | ${apInfo.portal ? "Portal: ACTIVE" : "Gateway: " + apInfo.gateway}`
+    : "Loading...";
+
+  return html`
+    <div class="header">
+      <div class="header-left">
+        <h1>AP Controller</h1>
+      </div>
+      <div class="header-right">${statusText}</div>
+    </div>
+  `;
+}

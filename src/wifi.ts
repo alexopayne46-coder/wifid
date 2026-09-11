@@ -2,12 +2,8 @@ import { readdirSync } from "node:fs";
 import { CONFIG, AP_MODE, netPassthough, hl, svc } from "./config.ts";
 import { runQuiet } from "./utils.ts";
 
-/**
- * Detect the AP interface: pick the first wlp0s20f0uN or wlp0s20u2uN that
- * actually exists on the system right now, trying prefixes in order.
- */
-export function detectApIface() {
-  let entries = [];
+export function detectApIface(): string | null {
+  let entries: string[] = [];
   try {
     entries = readdirSync("/sys/class/net");
   } catch {
@@ -21,14 +17,14 @@ export function detectApIface() {
     const matches = entries
       .map((name) => ({ name, match: name.match(pattern) }))
       .filter((e) => e.match)
-      .sort((a, b) => Number(a.match[1]) - Number(b.match[1]));
+      .sort((a, b) => Number(a.match![1]) - Number(b.match![1]));
     if (matches.length) return matches[0].name;
   }
   return null;
 }
 
-export function getApInterface() {
-  let AP_IFACE = process.env.AP_IFACE;
+export function getApInterface(): string {
+  let AP_IFACE: string | null = process.env.AP_IFACE ?? null;
   if (!AP_IFACE) {
     AP_IFACE = detectApIface();
     if (!AP_IFACE) {
@@ -48,12 +44,49 @@ export function getApInterface() {
   return AP_IFACE;
 }
 
-/**
- * Detect all external (internet-facing) interfaces
- */
-export function detectWanIfaces(AP_IFACE) {
-  const ifaces = new Set();
-  let netEntries = [];
+export function detectAllWirelessInterfaces(): string[] {
+  let entries: string[] = [];
+  try {
+    entries = readdirSync("/sys/class/net");
+  } catch {
+    return [];
+  }
+  const prefixes = Array.isArray(CONFIG.apIfacePrefix)
+    ? CONFIG.apIfacePrefix
+    : [CONFIG.apIfacePrefix];
+  const allInterfaces: string[] = [];
+  for (const prefix of prefixes) {
+    const pattern = new RegExp(`^${prefix}(\\d+)$`);
+    const matches = entries
+      .map((name) => ({ name, match: name.match(pattern) }))
+      .filter((e) => e.match)
+      .sort((a, b) => Number(a.match![1]) - Number(b.match![1]));
+    for (const match of matches) {
+      if (!allInterfaces.includes(match.name)) {
+        allInterfaces.push(match.name);
+      }
+    }
+  }
+  return allInterfaces;
+}
+
+export function getMeshInterfaces(): string[] {
+  if (!CONFIG.meshInterfaces) return [];
+
+  const meshConfig = String(CONFIG.meshInterfaces).trim();
+  if (meshConfig === "auto") {
+    return detectAllWirelessInterfaces();
+  }
+
+  return meshConfig
+    .split(",")
+    .map((iface: string) => iface.trim())
+    .filter((iface: string) => iface.length > 0);
+}
+
+export function detectWanIfaces(AP_IFACE: string): string[] {
+  const ifaces = new Set<string>();
+  let netEntries: string[] = [];
   try {
     netEntries = readdirSync("/sys/class/net");
   } catch {}
@@ -72,8 +105,8 @@ export function detectWanIfaces(AP_IFACE) {
         ifaces.add("tailscale0");
       }
     }
-    if (netPassthough && netEntries.includes(netPassthough)) {
-      ifaces.add(netPassthough);
+    if (netPassthough && netEntries.includes(String(netPassthough))) {
+      ifaces.add(String(netPassthough));
     }
   } catch {}
 

@@ -1,7 +1,21 @@
-import { createServer } from "node:http";
-import { readFileSync, existsSync, mkdirSync, writeFileSync, appendFileSync } from "node:fs";
+import { createServer, ServerResponse, IncomingMessage } from "node:http";
+import {
+  readFileSync,
+  existsSync,
+  mkdirSync,
+  writeFileSync,
+  appendFileSync,
+} from "node:fs";
 import { spawnSync } from "node:child_process";
-import path from "node:path";
+import { BunRequest } from "bun";
+
+type Logger = {
+  info: (msg: string) => void;
+  error: (msg: string) => void;
+  debug: (msg: string) => void;
+  warn: (msg: string) => void;
+  [key: string]: any;
+};
 
 const PORTAL_REDIRECT = `<html><body><h1>Hello World!</h1></body></html>`;
 const CAPTIVE_PORTAL_PATHS = new Set([
@@ -11,9 +25,13 @@ const CAPTIVE_PORTAL_PATHS = new Set([
   "/form",
 ]);
 
-export function startRequestLogger(bindIp, ports, logger) {
-  const handler = (req, res) => {
-    const remote = req.socket.remoteAddress || "unknown";
+export function startRequestLogger(
+  bindIp: string,
+  ports: number[],
+  logger: Logger,
+) {
+  const handler = (req: IncomingMessage, res: ServerResponse) => {
+    const remote = req.socket?.remoteAddress || "unknown";
     logger.info(`request: ${req.method} ${req.url} from ${remote}`);
     res.writeHead(200, { "Content-Type": "text/plain" });
     res.end("logged");
@@ -21,7 +39,7 @@ export function startRequestLogger(bindIp, ports, logger) {
 
   const servers = ports.map((port) => {
     const server = createServer(handler);
-    server.on("error", (err: any) => {
+    server.on("error", (err: NodeJS.ErrnoException) => {
       if (err.code === "EADDRINUSE") {
         const ss = spawnSync("ss", ["-tlnp", `sport = :${port}`], {
           encoding: "utf8",
@@ -39,7 +57,9 @@ export function startRequestLogger(bindIp, ports, logger) {
             `  (could not identify process — try: sudo ss -tlnp 'sport = :${port}')`,
           );
         }
-        logger.error(`to free the port: sudo kill $(lsof -ti :${port}) 2>/dev/null || sudo fuser -k ${port}/tcp`);
+        logger.error(
+          `to free the port: sudo kill $(lsof -ti :${port}) 2>/dev/null || sudo fuser -k ${port}/tcp`,
+        );
         server.close();
         process.exit(1);
       } else {
@@ -64,7 +84,12 @@ export function startRequestLogger(bindIp, ports, logger) {
   };
 }
 
-export function startPortalServer(bindIp, port, distDir, logger) {
+export function startPortalServer(
+  bindIp: string,
+  port: number,
+  distDir: string,
+  logger: Logger,
+) {
   if (!existsSync(distDir)) {
     mkdirSync(distDir, { recursive: true });
   }
@@ -86,7 +111,16 @@ export function startPortalServer(bindIp, port, distDir, logger) {
     ".ico": "image/x-icon",
   };
 
-  function sendPortalResponse(req, res, method, url, bindIp, port, distDir, logger) {
+  function sendPortalResponse(
+    req: IncomingMessage,
+    res: ServerResponse,
+    method: string,
+    url: string,
+    bindIp: string,
+    port: number,
+    distDir: string,
+    logger: Logger,
+  ) {
     const pathname = url.split("?")[0];
 
     if (CAPTIVE_PORTAL_PATHS.has(pathname)) {
@@ -104,8 +138,10 @@ export function startPortalServer(bindIp, port, distDir, logger) {
 
     try {
       const content = readFileSync(filePath);
-      const ext = pathname === "/" ? ".html" : pathname.slice(pathname.lastIndexOf("."));
-      const contentType = mimeTypes[ext] || "application/octet-stream";
+      const ext =
+        pathname === "/" ? ".html" : pathname.slice(pathname.lastIndexOf("."));
+      const contentType =
+        mimeTypes[ext as keyof typeof mimeTypes] || "application/octet-stream";
       res.writeHead(200, { "Content-Type": contentType });
       res.end(content);
     } catch {
@@ -114,8 +150,8 @@ export function startPortalServer(bindIp, port, distDir, logger) {
     }
   }
 
-  const handler = (req, res) => {
-    const remote = req.socket.remoteAddress || "unknown";
+  const handler = (req: IncomingMessage, res: ServerResponse) => {
+    const remote = req.socket?.remoteAddress || "unknown";
     const method = req.method || "GET";
     const url = req.url || "/";
     logger.info(`portal request: ${method} ${url} from ${remote}`);
@@ -134,11 +170,22 @@ export function startPortalServer(bindIp, port, distDir, logger) {
         };
         try {
           appendFileSync("forms.jsonl", JSON.stringify(entry) + "\n");
-          logger.info(`form saved: ${url} from ${remote} (${body.length} bytes)`);
+          logger.info(
+            `form saved: ${url} from ${remote} (${body.length} bytes)`,
+          );
         } catch (err) {
-          logger.error(`failed to save form: ${err.message}`);
+          logger.error(`failed to save form: ${(err as Error).message}`);
         }
-        sendPortalResponse(req, res, method, url, bindIp, port, distDir, logger);
+        sendPortalResponse(
+          req,
+          res,
+          method,
+          url,
+          bindIp,
+          port,
+          distDir,
+          logger,
+        );
       });
       return;
     }
@@ -147,7 +194,7 @@ export function startPortalServer(bindIp, port, distDir, logger) {
   };
 
   const server = createServer(handler);
-  server.on("error", (err: any) => {
+  server.on("error", (err: NodeJS.ErrnoException) => {
     if (err.code === "EADDRINUSE") {
       const ss = spawnSync("ss", ["-tlnp", `sport = :${port}`], {
         encoding: "utf8",
@@ -165,7 +212,9 @@ export function startPortalServer(bindIp, port, distDir, logger) {
           `  (could not identify process — try: sudo ss -tlnp 'sport = :${port}')`,
         );
       }
-      logger.error(`to free the port: sudo kill $(lsof -ti :${port}) 2>/dev/null || sudo fuser -k ${port}/tcp`);
+      logger.error(
+        `to free the port: sudo kill $(lsof -ti :${port}) 2>/dev/null || sudo fuser -k ${port}/tcp`,
+      );
       server.close();
       process.exit(1);
     } else {
@@ -174,7 +223,9 @@ export function startPortalServer(bindIp, port, distDir, logger) {
     }
   });
   server.listen(port, bindIp, () => {
-    logger.info(`portal server listening on http://${bindIp}:${port} (dist: ${distDir})`);
+    logger.info(
+      `portal server listening on http://${bindIp}:${port} (dist: ${distDir})`,
+    );
   });
   return server;
 }

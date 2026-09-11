@@ -60,7 +60,9 @@ function formatPinoMessage(str) {
     }
 
     const coloredTime = `${TIME_COLOR}${time}${LEVEL_COLOR_RESET}`;
-    const coloredLevel = levelColor ? `${levelColor}${levelStr}${LEVEL_COLOR_RESET}` : levelStr;
+    const coloredLevel = levelColor
+      ? `${levelColor}${levelStr}${LEVEL_COLOR_RESET}`
+      : levelStr;
 
     let coloredMsg = msg;
     if (log.service && msg.startsWith(`${log.service}:`)) {
@@ -121,9 +123,19 @@ const { values: args } = parseArgs({
       type: "boolean",
       short: "d",
     },
+    webController: {
+      type: "boolean",
+      short: "W",
+    },
+    webControllerAddr: {
+      type: "string",
+    },
     help: {
       type: "boolean",
       short: "h",
+    },
+    mesh: {
+      type: "string",
     },
   },
   strict: false,
@@ -148,6 +160,9 @@ Options:
   -o, --open                          Create an open (no password) AP
   -P, --portal                        Enable captive portal only (no internet, trial disabled)
   -d, --debug                         Enable debug logging
+  -W, --webController                 Enable web controller UI
+  --webControllerAddr <host:port>     Web controller address (default: 0.0.0.0:8125)
+  --mesh <iface1,iface2,...>         Enable mesh mode with multiple interfaces (comma-separated, or 'auto' for all)
   -h, --help                          Show this help message
 
 Environment Variables (fallbacks):
@@ -169,23 +184,30 @@ export const SERVER_BIND =
   args.serverBind || process.env.AP_SERVER_BIND || "192.168.12.1";
 export const AP_SSID = args.ssid || process.env.AP_SSID || "";
 export const AP_BSSID = args.bssid || process.env.AP_BSSID || "";
-export const AP_PASSWORD = args.open ? "" : args.password || process.env.AP_PASSWORD || "changeme123";
+export const AP_PASSWORD = args.open
+  ? ""
+  : args.password || process.env.AP_PASSWORD || "changeme123";
 export const AP_OPEN = args.open ?? process.env.AP_OPEN === "1";
 export const AP_PORTAL = args.portal ?? process.env.AP_PORTAL === "1";
+export const WEB_CONTROLLER_ENABLED = args.webController ?? false;
+export const WEB_CONTROLLER =
+  args.webControllerAddr || process.env.AP_WEB_CONTROLLER || "0.0.0.0:8125";
+export const MESH_INTERFACES =
+  args.mesh || process.env.AP_MESH_INTERFACES || "";
 
 export const CONFIG = {
   // Prefix shared by the USB Wi-Fi adapter's interface names; the trailing
   // number can change between plug-ins (wlp0s20f0u1, ...u2, ...u3, ...),
   // so we auto-detect whichever one currently exists.
-  apIfacePrefix: ["wlp0s20f0u", "wlp0s20u2u"],
+  apIfacePrefix: ["wlp0s20f0u", "wlp0s20u2u", "wlp0s20f0u4u"],
   apIp: "192.168.12.1/24",
   ssid: AP_SSID,
   bssid: AP_BSSID,
   password: AP_PASSWORD,
   open: AP_OPEN,
   portal: AP_PORTAL,
-   hostapdConfSrc: "templates/hostapd.conf",
-   dnsmasqConfSrc: "templates/dnsmasq-ap.conf",
+  hostapdConfSrc: "templates/hostapd.conf",
+  dnsmasqConfSrc: "templates/dnsmasq-ap.conf",
   notifyScript: "/usr/local/bin/hostapd-notify.sh",
   portalPort: "80",
   serverPort: "3000",
@@ -195,6 +217,8 @@ export const CONFIG = {
   trialSeconds: Number(args.trial ?? process.env.AP_TRIAL_SECONDS ?? 60),
   dnsOverwrite: DNS_OVERWRITE,
   portalDistDir: "./dist",
+  webController: WEB_CONTROLLER_ENABLED ? WEB_CONTROLLER : "",
+  meshInterfaces: MESH_INTERFACES,
 };
 
 export const CAPTIVE_PORTAL_DNS_DOMAINS = [
