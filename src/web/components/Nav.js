@@ -4,7 +4,7 @@ export function Nav({ page, onNavigate }) {
   const tabs = [
     { id: "status", label: "Status" },
     { id: "portal", label: "Portal" },
-    { id: "clients", label: "Clients" },
+    { id: "interfaces", label: "Interfaces" },
     { id: "dns", label: "DNS Queries" },
     { id: "logs", label: "Logs" },
     { id: "mesh", label: "Mesh" },

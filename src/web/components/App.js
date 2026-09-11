@@ -3,7 +3,7 @@ import { Nav } from "./Nav.js";
 import { Header } from "./Header.js";
 import { Status } from "./Status.js";
 import { Portal } from "./Portal.js";
-import { Clients } from "./Clients.js";
+import { Interfaces } from "./Interfaces.js";
 import { DnsQueries } from "./DnsQueries.js";
 import { Logs } from "./Logs.js";
 import { MeshInfo } from "./MeshInfo.js";
@@ -26,7 +26,7 @@ export class App extends Component {
       <div class="container">
         ${page === "status" && html`<${Status} />`}
         ${page === "portal" && html`<${Portal} />`}
-        ${page === "clients" && html`<${Clients} />`}
+        ${page === "interfaces" && html`<${Interfaces} />`}
         ${page === "dns" && html`<${DnsQueries} />`}
         ${page === "logs" && html`<${Logs} />`}
         ${page === "mesh" && html`<${MeshInfo} />`}
