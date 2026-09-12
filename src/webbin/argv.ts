@@ -57,11 +57,13 @@ function validateHostPort(value: string): boolean {
   return validatePort(m[2]);
 }
 
+const ARGV_FILE = path.join("data", "sys", "hypervisor-argv.sh");
+
 export class ArgvGetFunction extends WebBinFunction {
   name = "argvGet";
   execute() {
     try {
-      const content = readFileSync(".argv.txt", "utf8").trim();
+      const content = readFileSync(ARGV_FILE, "utf8").trim();
       return { content };
     } catch {
       return { content: "" };
@@ -156,7 +158,7 @@ export class ArgvSetFunction extends WebBinFunction {
       }
     }
 
-    writeFileSync(".argv.txt", content + "\n");
+    writeFileSync(ARGV_FILE, content + "\n");
     return { ok: true };
   }
 }

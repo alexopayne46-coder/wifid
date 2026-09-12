@@ -78,7 +78,7 @@ export class Settings extends Component {
       </div>
 
       <div class="card">
-        <h2>Startup Command (.argv.txt)</h2>
+        <h2>Startup Command (data/sys/hypervisor-argv.sh)</h2>
         <p class="ap-info">Used by hypervisor.ts. Must start with <b>bun</b> or <b>node</b> and include <b>src/ap.ts</b>.</p>
         <div class="preset-row">
           <label class="preset-label">Preset:</label>

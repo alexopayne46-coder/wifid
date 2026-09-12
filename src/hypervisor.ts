@@ -2,8 +2,9 @@
 
 import { spawn, ChildProcess } from "node:child_process";
 import { readFileSync } from "node:fs";
+import path from "node:path";
 
-const ARGV_FILE = ".argv.txt";
+const ARGV_FILE = path.join("data", "sys", "hypervisor-argv.sh");
 
 function tokenizeCommand(line: string): string[] {
   const tokens: string[] = [];
