@@ -9,6 +9,7 @@ import { PortalRequestsFunction } from "./portalRequests.ts";
 import { LogsFunction } from "./logs.ts";
 import { DhcpLeasesFunction } from "./dhcpLeases.ts";
 import { ArgvGetFunction, ArgvSetFunction } from "./argv.ts";
+import { ArgvPresetsFunction } from "./presets.ts";
 import { StopFunction } from "./stop.ts";
 import { InterfacesFunction } from "./interfaces.ts";
 import { ClientsByInterfaceFunction } from "./clientsByInterface.ts";
@@ -25,6 +26,7 @@ const registry = new Map<string, new () => WebBinFunction>([
   ["dhcpLeases", DhcpLeasesFunction],
   ["argvGet", ArgvGetFunction],
   ["argvSet", ArgvSetFunction],
+  ["argvPresets", ArgvPresetsFunction],
   ["stop", StopFunction],
   ["interfaces", InterfacesFunction],
   ["clientsByInterface", ClientsByInterfaceFunction],

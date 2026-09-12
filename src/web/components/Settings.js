@@ -1,7 +1,7 @@
 import { html, Component, apiCall } from "../app.js";
 
 export class Settings extends Component {
-  state = { config: null, argv: "", saving: false };
+  state = { config: null, argv: "", saving: false, presets: [] };
 
   componentDidMount() {
     this.loadConfig();
@@ -20,17 +20,30 @@ export class Settings extends Component {
     apiCall("argvGet")
       .then((data) => this.setState({ argv: data.result?.content || "" }))
       .catch(() => {});
+
+    apiCall("argvPresets")
+      .then((data) => this.setState({ presets: data.result || [] }))
+      .catch(() => {});
   }
+
+  applyPreset = (e) => {
+    const name = e.target.value;
+    if (!name) return;
+    const preset = this.state.presets.find((p) => p.name === name);
+    if (preset) {
+      this.setState({ argv: preset.command });
+    }
+  };
 
   saveArgv() {
     this.setState({ saving: true });
     apiCall("argvSet", { content: this.state.argv })
-      .then(() => alert("Saved. Restart the hypervisor to apply."))
+      .then(() => alert("Saved. Restart AP to apply."))
       .catch((err) => alert("Error: " + (err.error || err.message)))
       .finally(() => this.setState({ saving: false }));
   }
 
-  render(_, { config, argv, saving }) {
+  render(_, { config, argv, saving, presets }) {
     if (!config) {
       return html`<div class="card"><h2>Settings</h2><div>Loading...</div></div>`;
     }
@@ -68,6 +81,15 @@ export class Settings extends Component {
       <div class="card">
         <h2>Startup Command (.argv.txt)</h2>
         <p class="ap-info">Used by hypervisor.ts. Must start with <b>bun</b> or <b>node</b> and include <b>src/ap.ts</b>.</p>
+        <div class="preset-row">
+          <label class="preset-label">Preset:</label>
+          <select class="preset-select" onChange=${this.applyPreset}>
+            <option value="">-- select preset --</option>
+            ${presets.map((p) => html`
+              <option key=${p.name} value=${p.name}>${p.name}</option>
+            `)}
+          </select>
+        </div>
         <textarea
           class="argv-editor"
           value=${argv}

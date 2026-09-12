@@ -357,6 +357,37 @@ body {
   border-color: #4a4a4a;
 }
 
+.preset-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.preset-label {
+  color: #8a8a8a;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+
+.preset-select {
+  flex: 1;
+  background: #1a1a1a;
+  color: #d8d8d8;
+  border: 1px solid #3a3a3a;
+  padding: 6px 8px;
+  font-family: Tahoma, sans-serif;
+  font-size: 11px;
+  outline: none;
+  cursor: pointer;
+}
+
+.preset-select:focus {
+  border-color: #4a4a4a;
+}
+
 .argv-actions {
   margin-top: 10px;
 }
