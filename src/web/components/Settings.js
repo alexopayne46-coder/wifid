@@ -5,11 +5,10 @@ export class Settings extends Component {
 
   componentDidMount() {
     this.loadConfig();
-    this._interval = setInterval(() => this.loadConfig(), 5000);
   }
 
   componentWillUnmount() {
-    clearInterval(this._interval);
+    // no interval to clear
   }
 
   loadConfig() {

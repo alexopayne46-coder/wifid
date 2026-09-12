@@ -9,7 +9,7 @@ import { PortalRequestsFunction } from "./portalRequests.ts";
 import { LogsFunction } from "./logs.ts";
 import { DhcpLeasesFunction } from "./dhcpLeases.ts";
 import { ArgvGetFunction, ArgvSetFunction } from "./argv.ts";
-import { ArgvPresetsFunction } from "./presets.ts";
+import { ArgvPresetsFunction } from "./argvPresets.ts";
 import { StopFunction } from "./stop.ts";
 import { InterfacesFunction } from "./interfaces.ts";
 import { ClientsByInterfaceFunction } from "./clientsByInterface.ts";
