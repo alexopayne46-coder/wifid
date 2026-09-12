@@ -2,11 +2,12 @@ import { html, Component, apiCall } from "../app.js";
 import { Nav } from "./Nav.js";
 import { Header } from "./Header.js";
 import { Status } from "./Status.js";
+import { AdministrationPortal } from "./AdministrationPortal.js";
 import { Interfaces } from "./Interfaces.js";
 import { Logs } from "./Logs.js";
 import { Settings } from "./Settings.js";
 import { Drawer } from "./Drawer.js";
-import { AdministrationPortal } from "./AdministrationPortal.js";
+import { Tcpdump } from "./Tcpdump.js";
 
 export class App extends Component {
   state = {
@@ -17,12 +18,19 @@ export class App extends Component {
     drawerClients: [],
     drawerLoading: true,
     drawerIface: "all",
+    tcpdumpIface: null,
   };
 
   componentDidMount() {
     apiCall("apInfo")
       .then((data) => this.setState({ apInfo: data.result || {} }))
       .catch(() => {});
+
+    const path = window.location.pathname;
+    if (path.startsWith("/tcpdump/")) {
+      const iface = decodeURIComponent(path.slice("/tcpdump/".length));
+      this.setState({ page: "tcpdump", tcpdumpIface: iface });
+    }
   }
 
   openDrawerForIface = (iface) => {
@@ -39,7 +47,12 @@ export class App extends Component {
     this.setState({ drawerOpen: false });
   };
 
-  render(_, { page, apInfo, drawerOpen, drawerTitle, drawerClients, drawerLoading, drawerIface }) {
+  navigateToTcpdump = (iface) => {
+    this.setState({ page: "tcpdump", tcpdumpIface: iface });
+    window.history.pushState({}, "", `/tcpdump/${encodeURIComponent(iface)}`);
+  };
+
+  render(_, { page, apInfo, drawerOpen, drawerTitle, drawerClients, drawerLoading, drawerIface, tcpdumpIface }) {
     const drawerContent = drawerLoading
       ? html`<div class="ap-info">Loading...</div>`
       : drawerClients.length === 0
@@ -74,13 +87,14 @@ export class App extends Component {
 
     return html`
       <${Header} apInfo=${apInfo} />
-      <${Nav} page=${page} onNavigate=${(p) => this.setState({ page: p })} />
+      <${Nav} page=${page} onNavigate=${(p) => { this.setState({ page: p, tcpdumpIface: null }); window.history.pushState({}, "", "/"); }} />
       <div class="container">
         ${page === "status" && html`<${Status} />`}
         ${page === "administration" && html`<${AdministrationPortal} />`}
-        ${page === "interfaces" && html`<${Interfaces} onSelect=${this.openDrawerForIface} />`}
+        ${page === "interfaces" && html`<${Interfaces} onSelect=${this.openDrawerForIface} onTcpdump=${this.navigateToTcpdump} />`}
         ${page === "logs" && html`<${Logs} />`}
         ${page === "settings" && html`<${Settings} />`}
+        ${page === "tcpdump" && html`<${Tcpdump} iface=${tcpdumpIface} />`}
       </div>
       <${Drawer} open=${drawerOpen} onClose=${this.closeDrawer} title=${drawerTitle}>
         ${drawerContent}

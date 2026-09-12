@@ -45,6 +45,10 @@ export function startWebController() {
     res.json(result);
   });
 
+  app.get("/tcpdump/:iface", (req: Request, res: Response) => {
+    res.sendFile(path.join(webDir, "main.html"));
+  });
+
   app.get("/api/functions", (req: Request, res: Response) => {
     res.json({ functions: listFunctions() });
   });

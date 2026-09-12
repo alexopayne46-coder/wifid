@@ -13,6 +13,13 @@ import { ArgvPresetsFunction } from "./argvPresets.ts";
 import { StopFunction } from "./stop.ts";
 import { InterfacesFunction } from "./interfaces.ts";
 import { ClientsByInterfaceFunction } from "./clientsByInterface.ts";
+import {
+  TcpdumpStartFunction,
+  TcpdumpStopFunction,
+  TcpdumpOutputFunction,
+  TcpdumpListFunction,
+  TcpdumpCleanupFunction,
+} from "./tcpdumpControl.ts";
 
 const registry = new Map<string, new () => WebBinFunction>([
   ["status", StatusFunction],
@@ -30,6 +37,11 @@ const registry = new Map<string, new () => WebBinFunction>([
   ["stop", StopFunction],
   ["interfaces", InterfacesFunction],
   ["clientsByInterface", ClientsByInterfaceFunction],
+  ["tcpdumpStart", TcpdumpStartFunction],
+  ["tcpdumpStop", TcpdumpStopFunction],
+  ["tcpdumpOutput", TcpdumpOutputFunction],
+  ["tcpdumpList", TcpdumpListFunction],
+  ["tcpdumpCleanup", TcpdumpCleanupFunction],
 ]);
 
 export function getFunction(name: string): WebBinFunction | undefined {

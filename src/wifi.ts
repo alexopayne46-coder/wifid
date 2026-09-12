@@ -67,6 +67,19 @@ export function detectAllWirelessInterfaces(): string[] {
       }
     }
   }
+
+  if (CONFIG.meshInterfaces) {
+    const raw = String(CONFIG.meshInterfaces).trim();
+    if (raw !== "auto") {
+      for (const iface of raw.split(",")) {
+        const trimmed = iface.trim();
+        if (trimmed && entries.includes(trimmed) && !allInterfaces.includes(trimmed)) {
+          allInterfaces.push(trimmed);
+        }
+      }
+    }
+  }
+
   return allInterfaces;
 }
 

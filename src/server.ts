@@ -20,10 +20,23 @@ type Logger = {
 };
 
 const PORTAL_REDIRECT = `<html><body><h1>Hello World!</h1></body></html>`;
+
 const CAPTIVE_PORTAL_PATHS = new Set([
   "/generate_204",
+  "/gen_204",
+  "/connectivitycheck.gstatic.com",
+  "/hotspot-detect.html",
   "/library/test/success.html",
   "/connecttest.txt",
+  "/ncsi.txt",
+  "/redirect",
+  "/canonical.html",
+  "/success.txt",
+  "/generate_204?samsung",
+  "/kindle-wifi/wifiredirect.html",
+  "/kindle-wifi/wifistub.html",
+  "/nm-check.html",
+  "/check_network_status.txt",
   "/form",
 ]);
 
@@ -114,6 +127,32 @@ export function startPortalServer(
     ".ico": "image/x-icon",
   };
 
+  function resolveSafePath(
+    resolvedDir: string,
+    pathname: string,
+  ): string | null {
+    let decodedPath: string;
+    try {
+      decodedPath = decodeURIComponent(pathname);
+    } catch {
+      decodedPath = pathname;
+    }
+
+    // Strip ALL leading slashes (not just one) so requests like "//" or
+    // "///etc/passwd" can't turn into an absolute path that path.resolve()
+    // would otherwise treat as rooted at "/".
+    const cleanPath =
+      decodedPath === "/" ? "index.html" : decodedPath.replace(/^\/+/, "");
+
+    const resolved = path.resolve(resolvedDir, cleanPath);
+
+    const rel = path.relative(resolvedDir, resolved);
+    if (rel.startsWith("..") || path.isAbsolute(rel)) {
+      return null;
+    }
+    return resolved;
+  }
+
   function sendPortalResponse(
     req: IncomingMessage,
     res: ServerResponse,
@@ -136,10 +175,10 @@ export function startPortalServer(
       return;
     }
 
-    let resolved = pathname === "/"
-      ? path.join(distDir, "index.html")
-      : path.resolve(distDir, pathname);
-    if (!resolved.startsWith(path.resolve(distDir) + path.sep) && resolved !== path.resolve(distDir)) {
+    const resolvedDir = path.resolve(distDir);
+    const resolved = resolveSafePath(resolvedDir, pathname);
+
+    if (resolved === null) {
       logger.warn(`blocked path traversal attempt: ${pathname}`);
       res.writeHead(403, { "Content-Type": "text/plain" });
       res.end("Forbidden");
@@ -148,7 +187,8 @@ export function startPortalServer(
 
     try {
       const content = readFileSync(resolved);
-      const ext = pathname === "/" ? ".html" : pathname.slice(pathname.lastIndexOf("."));
+      const ext =
+        pathname === "/" ? ".html" : pathname.slice(pathname.lastIndexOf("."));
       const contentType =
         mimeTypes[ext as keyof typeof mimeTypes] || "application/octet-stream";
       res.writeHead(200, { "Content-Type": contentType });

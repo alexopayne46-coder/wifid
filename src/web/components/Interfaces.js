@@ -1,16 +1,40 @@
 import { html, Component, apiCall } from "../app.js";
 
+const POLL_INTERVAL_MS = 5000;
+
 export class Interfaces extends Component {
   state = { interfaces: [], meshIfaces: [], loading: true };
 
   componentDidMount() {
     this.loadData();
-    this._interval = setInterval(() => this.loadData(), 5000);
+    this._startPolling();
+    document.addEventListener("visibilitychange", this.handleVisibility);
   }
 
   componentWillUnmount() {
-    clearInterval(this._interval);
+    this._stopPolling();
+    document.removeEventListener("visibilitychange", this.handleVisibility);
   }
+
+  _startPolling() {
+    if (this._interval) return;
+    this._interval = setInterval(() => this.loadData(), POLL_INTERVAL_MS);
+  }
+
+  _stopPolling() {
+    clearInterval(this._interval);
+    this._interval = null;
+  }
+
+  handleVisibility = () => {
+    if (document.hidden) {
+      // Pause polling when tab/app isn't visible — saves battery & data on mobile
+      this._stopPolling();
+    } else {
+      this.loadData();
+      this._startPolling();
+    }
+  };
 
   async loadData() {
     const [ifacesData, apData] = await Promise.all([
@@ -40,6 +64,7 @@ export class Interfaces extends Component {
     const DownIcon = () => html`<${Svg}><path d="M12 5v14"/><path d="M19 12l-7 7-7-7"/></${Svg}>`;
     const DriverIcon = () => html`<${Svg}><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 1v3"/><path d="M15 1v3"/><path d="M9 20v3"/><path d="M15 20v3"/><path d="M20 9h3"/><path d="M20 14h3"/><path d="M1 9h3"/><path d="M1 14h3"/></${Svg}>`;
     const RestartsIcon = () => html`<${Svg}><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M21 21v-5h-5"/></${Svg}>`;
+    const TcpdumpIcon = () => html`<${Svg}><path d="M2 12h20"/><path d="M2 12l5-5"/><path d="M2 12l5 5"/><path d="M22 12l-5-5"/><path d="M22 12l-5 5"/></${Svg}>`;
 
     return html`
       <div class="card">
@@ -49,35 +74,39 @@ export class Interfaces extends Component {
           : interfaces.length === 0
             ? html`<div class="ap-info">No wireless interfaces found</div>`
             : html`
-              <table class="settings-table clients-table iface-table">
-                <thead>
-                  <tr>
-                    <th><${HashIcon} /> #</th>
-                    <th><${WifiIcon} /> Interface</th>
-                    <th><${ClientsIcon} /> Clients</th>
-                    <th><${UpIcon} /> TX</th>
-                    <th><${DownIcon} /> RX</th>
-                    <th><${DriverIcon} /> Driver</th>
-                    <th><${RestartsIcon} /> Restarts</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${interfaces.map((iface) => {
-                    const isMesh = meshIfaces.includes(iface.name);
-                    return html`
-                      <tr key=${iface.name} onClick=${() => this.handleSelect(iface.name)} style="cursor:pointer">
-                        <td>${iface.number}</td>
-                        <td>${iface.name} ${isMesh ? html`<span class="mesh-icon" title="Mesh">◈</span>` : ""}</td>
-                        <td>${iface.clients}</td>
-                        <td>${iface.tx ? iface.tx.toFixed(0) + " MBit/s" : "-"}</td>
-                        <td>${iface.rx ? iface.rx.toFixed(0) + " MBit/s" : "-"}</td>
-                        <td>${iface.driver}</td>
-                        <td>${iface.restarts || 0}</td>
-                      </tr>
-                    `;
-                  })}
-                </tbody>
-              </table>
+              <div class="table-scroll">
+                <table class="settings-table clients-table iface-table">
+                  <thead>
+                    <tr>
+                      <th><${HashIcon} /> #</th>
+                      <th><${WifiIcon} /> Interface</th>
+                      <th><${ClientsIcon} /> Clients</th>
+                      <th><${UpIcon} /> TX</th>
+                      <th><${DownIcon} /> RX</th>
+                      <th class="col-optional"><${DriverIcon} /> Driver</th>
+                      <th class="col-optional"><${RestartsIcon} /> Restarts</th>
+                      <th><${TcpdumpIcon} /> Capture</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${interfaces.map((iface) => {
+                      const isMesh = meshIfaces.includes(iface.name);
+                      return html`
+                        <tr key=${iface.name} style="cursor:pointer">
+                          <td>${iface.number}</td>
+                          <td>${iface.name} ${isMesh ? html`<span class="mesh-icon" title="Mesh">◈</span>` : ""}</td>
+                          <td>${iface.clients}</td>
+                          <td>${iface.tx ? iface.tx.toFixed(0) + " MBit/s" : "-"}</td>
+                          <td>${iface.rx ? iface.rx.toFixed(0) + " MBit/s" : "-"}</td>
+                          <td class="col-optional">${iface.driver}</td>
+                          <td class="col-optional">${iface.restarts || 0}</td>
+                          <td><button class="btn" style="padding: 2px 8px; font-size: 10px;" onClick=${(e) => { e.stopPropagation(); this.props.onTcpdump && this.props.onTcpdump(iface.name); }}>tcpdump</button></td>
+                        </tr>
+                      `;
+                    })}
+                  </tbody>
+                </table>
+              </div>
             `
         }
       </div>
