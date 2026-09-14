@@ -1,3 +1,5 @@
+import { mkdirSync } from "node:fs";
+
 export const HOOKS = {
   AP_CONNECTED: "AP_CONNECTED",
   PORTAL_SUBMITED: "PORTAL_SUBMITED",
@@ -55,13 +57,15 @@ export async function callHook(event: HookEvent, ...args: any[]): Promise<void> 
 }
 
 export async function loadUserHooks(): Promise<void> {
-  const path = "./data/userfiles/hooks.ts";
+  const dir = "./data/userfiles";
+  const filePath = `${dir}/hooks.ts`;
   try {
-    const mod = await import(path);
-    if (typeof mod.load === "function") {
-      await mod.load(hook, unregister, HOOKS);
-    }
+    mkdirSync(dir, { recursive: true });
+  } catch {}
+
+  try {
+    await import(filePath);
   } catch {
-    // File does not exist or has no default export; ignore
+    // File does not exist or failed to load; ignore
   }
 }
