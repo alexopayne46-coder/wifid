@@ -1,4 +1,5 @@
 import { mkdirSync } from "node:fs";
+import { hl, svc } from "./config.ts";
 
 export const HOOKS = {
   AP_CONNECTED: "AP_CONNECTED",
@@ -32,6 +33,7 @@ export function hook(
 ): string {
   const id = generateMemcode();
   hooks.push({ id, event, fn });
+  svc("hooks").info(`registered hook ${hl(id)} for event ${event}`);
   return id;
 }
 
@@ -39,19 +41,24 @@ export function unregister(memcode: string): boolean {
   const idx = hooks.findIndex((h) => h.id === memcode);
   if (idx >= 0) {
     hooks.splice(idx, 1);
+    svc("hooks").info(`unregistered hook ${hl(memcode)}`);
     return true;
   }
+  svc("hooks").warn(`unregister failed: hook ${hl(memcode)} not found`);
   return false;
 }
 
 export async function callHook(event: HookEvent, ...args: any[]): Promise<void> {
-  for (const entry of hooks) {
-    if (entry.event === event) {
-      try {
-        await entry.fn(...args);
-      } catch (err) {
-        console.error(`hook error [${event}]: ${(err as Error).message}`);
-      }
+  const matched = hooks.filter((entry) => entry.event === event);
+  if (matched.length === 0) return;
+  svc("hooks").debug(
+    `calling ${String(matched.length)} hook(s) for event ${event}`,
+  );
+  for (const entry of matched) {
+    try {
+      await entry.fn(...args);
+    } catch (err) {
+      console.error(`hook error [${event}] ${hl(entry.id)}: ${(err as Error).message}`);
     }
   }
 }
@@ -63,9 +70,11 @@ export async function loadUserHooks(): Promise<void> {
     mkdirSync(dir, { recursive: true });
   } catch {}
 
+  svc("hooks").info(`loading user hooks from ${filePath}`);
   try {
     await import(filePath);
+    svc("hooks").info("user hooks loaded");
   } catch {
-    // File does not exist or failed to load; ignore
+    svc("hooks").warn("user hooks file not found or failed to load");
   }
 }
