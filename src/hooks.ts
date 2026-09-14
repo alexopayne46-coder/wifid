@@ -1,4 +1,5 @@
 import { mkdirSync } from "node:fs";
+import path from "node:path";
 import { hl, svc } from "./config.ts";
 
 export const HOOKS = {
@@ -64,17 +65,19 @@ export async function callHook(event: HookEvent, ...args: any[]): Promise<void> 
 }
 
 export async function loadUserHooks(): Promise<void> {
-  const dir = "./data/userfiles";
-  const filePath = `${dir}/hooks.ts`;
+  const dir = path.resolve(import.meta.dir, "..", "data", "userfiles");
+  const filePath = path.join(dir, "hooks.ts");
   try {
     mkdirSync(dir, { recursive: true });
   } catch {}
 
-  svc("hooks").info(`loading user hooks from ${filePath}`);
+  svc("hooks").info(`loading user hooks from ${hl(filePath)}`);
   try {
     await import(filePath);
     svc("hooks").info("user hooks loaded");
-  } catch {
-    svc("hooks").warn("user hooks file not found or failed to load");
+  } catch (err) {
+    svc("hooks").warn(
+      `user hooks file not found or failed to load: ${(err as Error).message}`,
+    );
   }
 }
