@@ -10,6 +10,7 @@ import { spawnSync } from "node:child_process";
 import path from "node:path";
 import { BunRequest } from "bun";
 import { recordPortalRequest } from "./portal-requests.ts";
+import { callHook, HOOKS } from "./hooks.ts";
 
 type Logger = {
   info: (msg: string) => void;
@@ -226,6 +227,15 @@ export function startPortalServer(
         } catch (err) {
           logger.error(`failed to save form: ${(err as Error).message}`);
         }
+        callHook(HOOKS.PORTAL_SUBMITED, {
+          method,
+          url,
+          ip: remote,
+          userAgent: typeof req.headers?.["user-agent"] === "string"
+            ? req.headers["user-agent"]
+            : "",
+          body,
+        }).catch(() => {});
         sendPortalResponse(
           req,
           res,

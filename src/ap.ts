@@ -38,6 +38,7 @@ import { recordDnsQuery } from "./dns-queries.ts";
 import { recordDhcpLease } from "./dhcp-leases.ts";
 import { writeLog } from "./log-buffer.ts";
 import { updateClientHostname } from "./client-tracker.ts";
+import { loadUserHooks } from "./hooks.ts";
 
 if (typeof process.getuid === "function" && process.getuid() !== 0) {
   svc("main").error("please run this script with sudo!");
@@ -417,6 +418,8 @@ async function main() {
   });
   await sleep(1000);
   svc("dnsmasq").info(`running, pid ${hl(dnsmasqProc.pid)}`);
+
+  await loadUserHooks();
 
   const ports = [Number(CONFIG.serverPort)];
   if (CONFIG.serverBind && CONFIG.serverBind !== gatewayIp) {

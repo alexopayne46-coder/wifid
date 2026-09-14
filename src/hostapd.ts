@@ -6,6 +6,7 @@ import { CONFIG, svc } from "./config.ts";
 import { runQuiet, sleep, streamToLog } from "./utils.ts";
 import { writeLog } from "./log-buffer.ts";
 import { updateClientFromStation } from "./client-tracker.ts";
+import { callHook, HOOKS } from "./hooks.ts";
 
 export interface HostapdState {
   hostapdProc: any;
@@ -119,7 +120,21 @@ export function watchHostapdLine(
 
   if (/AP-STA-CONNECTED/.test(line)) {
     const m = line.match(/AP-STA-CONNECTED\s+([0-9a-f:]+)/i);
-    if (m) updateClientFromStation({ mac: m[1], interface: apIface });
+    if (m) {
+      updateClientFromStation({ mac: m[1], interface: apIface });
+      callHook(HOOKS.AP_CONNECTED, { mac: m[1], interface: apIface }).catch(
+        () => {},
+      );
+    }
+  }
+
+  if (/AP-STA-DISCONNECTED/.test(line)) {
+    const m = line.match(/AP-STA-DISCONNECTED\s+([0-9a-f:]+)/i);
+    if (m) {
+      callHook(HOOKS.AP_DISCONNECTED, { mac: m[1], interface: apIface }).catch(
+        () => {},
+      );
+    }
   }
 
   if (/INTERFACE-DISABLED/.test(line)) {
